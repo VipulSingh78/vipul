@@ -11,12 +11,17 @@ auth_token = '40d3d53464a816fb6de7855a640c4194'
 
 client = Client(account_sid, auth_token)
 
-# Load your pre-trained model
+# Load your pre-trained model with error handling
 st.title('Welcome to Apna Electrician')
 st.subheader('Upload an image of a product, and get recommendations!')
 
 product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
-model = load_model('Vipul_Recog_Model.keras')
+
+# Handle model loading with try-except for better error messages
+try:
+    model = load_model('Vipul_Recog_Model.keras')
+except Exception as e:
+    st.error(f"Error loading model: {e}")
 
 # Function to classify uploaded images
 def classify_images(image_path):
@@ -53,7 +58,7 @@ def classify_images(image_path):
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
         # Publicly hosted image URL (replace with your hosted image URL)
-        media_url = ['https://your-public-image-url.com/path-to-image.jpg']
+        media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
 
         # Create and send the WhatsApp message with the image
         message = client.messages.create(
@@ -69,6 +74,8 @@ def send_whatsapp_message(image_path, predicted_class, buy_link):
 
 # Streamlit file uploader for image
 st.markdown("### Upload your image below:")
+
+# Ensure only valid image files are uploaded
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
 if uploaded_file is not None:
     # Save the uploaded file locally
@@ -81,14 +88,13 @@ if uploaded_file is not None:
     st.image(uploaded_file, use_column_width=True)
 
     # Perform classification and display result
-    result = classify_images(save_path)
-    st.success(result)
+    try:
+        result = classify_images(save_path)
+        st.success(result)
+    except Exception as e:
+        st.error(f"Error in classification: {e}")
 
     # Option to clear the uploaded image
     if st.button("Clear Image"):
         uploaded_file = None
         st.experimental_rerun()
-import streamlit as st
-
-st.title("Hello, Streamlit!")
-st.write("This is your first Streamlit app.")
