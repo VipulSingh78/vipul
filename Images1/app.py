@@ -19,7 +19,7 @@ product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
 
 # Handle model loading with try-except for better error messages
 try:
-    model = load_model('Vipul_Recog_Model.keras')
+    model = load_model(r'C:\Users\vipul\Images1\Vipul_Recog_Model.keras')
 except Exception as e:
     st.error(f"Error loading model: {e}")
 
