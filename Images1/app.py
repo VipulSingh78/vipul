@@ -32,8 +32,23 @@ def classify_images(image_path):
 
     # Predict the class
     predictions = model.predict(input_image_exp_dim)
-    result = tf.nn.softmax(predictions[0])
-    predicted_class = product_names[np.argmax(result)]
+
+    # Print the shape and content of predictions for debugging
+    print("Predictions shape:", predictions.shape)
+    print("Predictions content:", predictions)  # Debugging line
+
+    # Check if predictions are in the expected shape
+    if predictions.ndim == 2:  # Ensure that predictions are a 2D array
+        result = tf.nn.softmax(predictions[0])
+        predicted_class_index = np.argmax(result)
+
+        # Check if the index is within the range of product names
+        if 0 <= predicted_class_index < len(product_names):
+            predicted_class = product_names[predicted_class_index]
+        else:
+            raise IndexError("Predicted class index is out of range.")
+    else:
+        raise ValueError("Unexpected predictions shape: expected 2D array.")
 
     # Define product links
     product_links = {
@@ -47,7 +62,7 @@ def classify_images(image_path):
     # Generate the dynamic link
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
     outcome = f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
-    
+
     # Send WhatsApp message with the classification result
     send_whatsapp_message(image_path, predicted_class, buy_link)
 
