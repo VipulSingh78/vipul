@@ -25,13 +25,13 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-# Corrected URL with closing quote
+# Model download URL
 url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
-local_filename = os.path.join('Models', 'Vipul_Recog_Model.keras')
+local_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
 
 os.makedirs('Models', exist_ok=True)
 
-# Downloading the model
+# Downloading the model in .h5 format
 try:
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
@@ -40,11 +40,13 @@ try:
                 if chunk:
                     f.write(chunk)
 except Exception as e:
-    print(f"Error downloading the model: {e}")
+    st.error(f"Error downloading the model: {e}")
 
-# Model ko load karna
+# Try loading the model
 try:
+    # Load the .h5 model
     model = load_model(local_filename)
+    st.success('Model loaded successfully!')
 except Exception as e:
     st.error(f"Error loading model: {e}")
 
