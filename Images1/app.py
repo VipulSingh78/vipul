@@ -6,7 +6,7 @@ from tensorflow.keras.models import load_model
 from twilio.rest import Client
 import requests
 
-# Twilio credentials (yeh secure environment variables ke through production me use karo)
+# Twilio credentials (secure these in production using environment variables)
 account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
 auth_token = '40d3d53464a816fb6de7855a640c4194'
 client = Client(account_sid, auth_token)
@@ -25,13 +25,12 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-# Model download and loading
+# Download model if not available
 url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
 local_filename = os.path.join('Models', 'Vipul_Recog_Model.keras')
-
 os.makedirs('Models', exist_ok=True)
 
-# Download the model if it doesn't exist
+# Downloading the model if it doesn't exist locally
 if not os.path.exists(local_filename):
     try:
         with requests.get(url, stream=True) as r:
@@ -40,19 +39,18 @@ if not os.path.exists(local_filename):
                 for chunk in r.iter_content(chunk_size=8192):
                     if chunk:
                         f.write(chunk)
-        st.write("Model downloaded successfully.")
+        print("Model downloaded successfully.")
     except Exception as e:
-        st.error(f"Error downloading the model: {e}")
+        print(f"Error downloading the model: {e}")
 else:
-    st.write("Model already exists locally at:", local_filename)
+    print("Model already exists locally.")
 
-# **LOAD THE MODEL** - Ensure model is loaded before predictions
+# Loading the model
 try:
-    model = load_model(local_filename)  # Load model from the saved file
+    model = load_model(local_filename)
     st.write("Model loaded successfully.")
 except Exception as e:
-    st.error(f"Error loading model: {e}")
-    st.stop()  # Stop execution if model loading fails
+    st.write(f"Error loading model: {e}")
 
 # Image classification function
 def classify_images(image_path):
@@ -60,7 +58,7 @@ def classify_images(image_path):
     input_image_array = tf.keras.utils.img_to_array(input_image)
     input_image_exp_dim = tf.expand_dims(input_image_array, 0)
 
-    predictions = model.predict(input_image_exp_dim)
+    predictions = model.predict(input_image_exp_dim)  # Using the model here
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
     
@@ -77,7 +75,7 @@ def classify_images(image_path):
 # WhatsApp message sending function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
-        # Publicly hosted image URL (yahan apna image URL daalna hoga)
+        # Placeholder image URL
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
 
         message = client.messages.create(
