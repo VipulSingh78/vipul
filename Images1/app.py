@@ -25,12 +25,6 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-import requests
-import os
-
-import requests
-import os
-
 # Corrected URL with closing quote
 url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
 local_filename = os.path.join('Models', 'Vipul_Recog_Model.keras')
@@ -48,6 +42,11 @@ try:
 except Exception as e:
     print(f"Error downloading the model: {e}")
 
+# Model ko load karna
+try:
+    model = load_model(local_filename)
+except Exception as e:
+    st.error(f"Error loading model: {e}")
 
 # Image classify karne ka function
 def classify_images(image_path):
@@ -105,4 +104,4 @@ if uploaded_file is not None:
 
     if st.button("Clear Image"):
         uploaded_file = None
-        st.experimental_rerun() 
+        st.experimental_rerun()
