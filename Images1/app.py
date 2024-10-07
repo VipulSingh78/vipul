@@ -28,25 +28,26 @@ product_links = {
 import requests
 import os
 
-# Example for downloading model from GitHub
-url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras
-'
-  # Add your model URL here
-local_filename = os.path.join('Models', 'model.keras')
+import requests
+import os
 
-# Create a folder if it doesn't exist
+# Corrected URL with closing quote
+url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
+local_filename = os.path.join('Models', 'Vipul_Recog_Model.keras')
+
 os.makedirs('Models', exist_ok=True)
 
-# Download the file
+# Downloading the model
 try:
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
         with open(local_filename, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192): 
-                if chunk:  # Filter out keep-alive new chunks
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
                     f.write(chunk)
 except Exception as e:
-    st.error(f"Error downloading the model: {e}")
+    print(f"Error downloading the model: {e}")
+
 
 # Image classify karne ka function
 def classify_images(image_path):
