@@ -6,16 +6,16 @@ from tensorflow.keras.models import load_model
 from twilio.rest import Client
 import requests
 
-# Twilio credentials (production me secure environment variables ka use karo)
+# Twilio credentials (yeh secure environment variables ke through production me use karo)
 account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
 auth_token = '40d3d53464a816fb6de7855a640c4194'
 client = Client(account_sid, auth_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
-st.subheader('Apna product image upload karo aur recommendations pao!')
+st.subheader('Upload an image of a product, and get recommendations!')
 
-# Product ke naam aur links
+# Product names and links
 product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
 product_links = {
     'Anchor Switch': 'https://www.apnaelectrician.com/anchor-switches',
@@ -25,31 +25,31 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-# Model ka path
-model_path = os.path.join('Models', 'Vipul_Recog_Model.keras')
+# Model URL
+url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
+local_filename = os.path.join('Models', 'Vipul_Recog_Model.keras')
 
-# Agar model exist nahi karta toh download karo
-if not os.path.exists(model_path):
-    st.info('Model local me nahi mila, download kar rahe hain...')
-    try:
-        url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
-        os.makedirs('Models', exist_ok=True)
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(model_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-        st.success('Model successfully download ho gaya!')
-    except Exception as e:
-        st.error(f"Model download karte waqt error: {e}")
+# Folder bana lo agar exist nahi karta
+os.makedirs('Models', exist_ok=True)
 
-# Model ko load karo, agar error aaye toh usko handle karo
+# Model ko download karo
 try:
-    model = load_model(model_path)
-    st.success("Model successfully load ho gaya!")
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        with open(local_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
 except Exception as e:
-    st.error(f"Model load karte waqt error: {e}")
+    st.error(f"Error downloading the model: {e}")
+
+# Model ko load karo
+try:
+    model = load_model(local_filename)
+    st.write("Model loaded successfully.")
+except Exception as e:
+    st.error(f"Error loading model: {e}")
+
 
 # Image classify karne ka function
 def classify_images(image_path):
@@ -64,29 +64,30 @@ def classify_images(image_path):
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
     else:
-        raise IndexError("Predicted class ka index galat range me hai.")
+        raise IndexError("Predicted class index out of range.")
     
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
     send_whatsapp_message(image_path, predicted_class, buy_link)
     
-    return f'Image {predicted_class} se related hai. [Yahan se kharidein]({buy_link})'
+    return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
 # WhatsApp message bhejne ka function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
+
         message = client.messages.create(
-            from_='whatsapp:+14155238886',  # Twilio ka number
+            from_='whatsapp:+14155238886',  # Twilio number
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=media_url,  # Public image URL
+            media_url=media_url,  
             to='whatsapp:+917800905998'
         )
-        print("WhatsApp message successfully bheja gaya:", message.sid)
+        print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
-        print("WhatsApp message bhejte waqt error:", e)
+        print("Error sending WhatsApp message:", e)
 
 # Streamlit file uploader
-st.markdown("### Apni image upload karo:")
+st.markdown("### Upload your image below:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
 
 if uploaded_file is not None:
@@ -101,8 +102,8 @@ if uploaded_file is not None:
         result = classify_images(save_path)
         st.success(result)
     except Exception as e:
-        st.error(f"Image classification me error: {e}")
+        st.error(f"Error in classification: {e}")
 
-    if st.button("Image clear karo"):
+    if st.button("Clear Image"):
         uploaded_file = None
         st.experimental_rerun()
