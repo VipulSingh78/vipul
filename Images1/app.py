@@ -29,7 +29,8 @@ import requests
 import os
 
 # Example for downloading model from GitHub
-url = 'https://raw.githubusercontent.com/vipul/repo-name/main/path-to/Vipul_Recog_Model.keras'
+url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras
+'
   # Add your model URL here
 local_filename = os.path.join('Models', 'model.keras')
 
