@@ -6,7 +6,7 @@ from tensorflow.keras.models import load_model
 from twilio.rest import Client
 import requests
 
-# Twilio credentials (yeh secure environment variables ke through production me use karo)
+# Twilio credentials
 account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
 auth_token = '40d3d53464a816fb6de7855a640c4194'
 client = Client(account_sid, auth_token)
@@ -25,14 +25,8 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-import requests
-import os
-
-import requests
-import os
-
-# Corrected URL with closing quote
-url = 'Images1/Vipul_Recog_Model.keras'
+# Model download and load
+url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
 local_filename = os.path.join('Models', 'Vipul_Recog_Model.keras')
 
 os.makedirs('Models', exist_ok=True)
@@ -46,11 +40,19 @@ try:
                 if chunk:
                     f.write(chunk)
 except Exception as e:
-    print(f"Error downloading the model: {e}")
+    st.error(f"Error downloading the model: {e}")
 
+# **LOAD THE MODEL** - This ensures the model is available before predictions.
+try:
+    model = load_model(local_filename)  # Load the model from the downloaded file
+except Exception as e:
+    st.error(f"Error loading model: {e}")
 
-# Image classify karne ka function
+# Image classification function
 def classify_images(image_path):
+    if model is None:
+        st.error("Model is not loaded. Check the model loading process.")
+        return
     input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
     input_image_array = tf.keras.utils.img_to_array(input_image)
     input_image_exp_dim = tf.expand_dims(input_image_array, 0)
@@ -69,10 +71,9 @@ def classify_images(image_path):
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
-# WhatsApp message bhejne ka function
+# WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
-        # Publicly hosted image URL (yahan apna image URL daalna hoga)
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
 
         message = client.messages.create(
@@ -105,4 +106,4 @@ if uploaded_file is not None:
 
     if st.button("Clear Image"):
         uploaded_file = None
-        st.experimental_rerun() 
+        st.experimental_rerun()
