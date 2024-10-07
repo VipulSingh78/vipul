@@ -42,11 +42,19 @@ try:
 except Exception as e:
     st.error(f"Error downloading the model: {e}")
 
-# **LOAD THE MODEL** - This ensures the model is available before predictions.
+import os
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+
+# Define the model path
+model_path = os.path.join('Models', 'Vipul_Recog_Model.keras')
+
+# Try loading the model and catch errors
 try:
-    model = load_model(local_filename)  # Load the model from the downloaded file
+    model = load_model(model_path)
+    print("Model loaded successfully")
 except Exception as e:
-    st.error(f"Error loading model: {e}")
+    print(f"Error loading model: {e}")
 
 
 # Image classify karne ka function
