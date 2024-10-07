@@ -6,7 +6,6 @@ from tensorflow.keras.models import load_model
 from twilio.rest import Client
 import requests
 
-
 # Twilio credentials (yeh secure environment variables ke through production me use karo)
 account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
 auth_token = '40d3d53464a816fb6de7855a640c4194'
