@@ -25,14 +25,19 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-# Model URL
+import requests
+import os
+
+import requests
+import os
+
+# Corrected URL with closing quote
 url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
 local_filename = os.path.join('Models', 'Vipul_Recog_Model.keras')
 
-# Folder bana lo agar exist nahi karta
 os.makedirs('Models', exist_ok=True)
 
-# Model ko download karo
+# Downloading the model
 try:
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
@@ -41,14 +46,7 @@ try:
                 if chunk:
                     f.write(chunk)
 except Exception as e:
-    st.error(f"Error downloading the model: {e}")
-
-# Model ko load karo
-try:
-    model = load_model(local_filename)
-    st.write("Model loaded successfully.")
-except Exception as e:
-    st.error(f"Error loading model: {e}")
+    print(f"Error downloading the model: {e}")
 
 
 # Image classify karne ka function
@@ -74,12 +72,13 @@ def classify_images(image_path):
 # WhatsApp message bhejne ka function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
+        # Publicly hosted image URL (yahan apna image URL daalna hoga)
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
 
         message = client.messages.create(
             from_='whatsapp:+14155238886',  # Twilio number
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=media_url,  
+            media_url=media_url,  # Public image URL
             to='whatsapp:+917800905998'
         )
         print("WhatsApp message sent successfully:", message.sid)
@@ -106,4 +105,4 @@ if uploaded_file is not None:
 
     if st.button("Clear Image"):
         uploaded_file = None
-        st.experimental_rerun()
+        st.experimental_rerun() 
