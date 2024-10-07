@@ -6,16 +6,16 @@ from tensorflow.keras.models import load_model
 from twilio.rest import Client
 import requests
 
-# Twilio credentials (yeh secure environment variables ke through production me use karo)
+# Twilio credentials (production me secure environment variables ka use karo)
 account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
 auth_token = '40d3d53464a816fb6de7855a640c4194'
 client = Client(account_sid, auth_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
-st.subheader('Upload an image of a product, and get recommendations!')
+st.subheader('Apna product image upload karo aur recommendations pao!')
 
-# Product names and links
+# Product ke naam aur links
 product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
 product_links = {
     'Anchor Switch': 'https://www.apnaelectrician.com/anchor-switches',
@@ -25,15 +25,31 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-# Model path - ensure the model is in the correct format (e.g., '.h5')
+# Model ka path
 model_path = os.path.join('Models', 'Vipul_Recog_Model.h5')
 
-# Try loading the model with error handling
+# Agar model exist nahi karta toh download karo
+if not os.path.exists(model_path):
+    st.info('Model local me nahi mila, download kar rahe hain...')
+    try:
+        url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.h5'
+        os.makedirs('Models', exist_ok=True)
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(model_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+        st.success('Model successfully download ho gaya!')
+    except Exception as e:
+        st.error(f"Model download karte waqt error: {e}")
+
+# Model ko load karo, agar error aaye toh usko handle karo
 try:
     model = load_model(model_path)
-    st.success("Model loaded successfully!")
+    st.success("Model successfully load ho gaya!")
 except Exception as e:
-    st.error(f"Error loading model: {e}")
+    st.error(f"Model load karte waqt error: {e}")
 
 # Image classify karne ka function
 def classify_images(image_path):
@@ -48,31 +64,29 @@ def classify_images(image_path):
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
     else:
-        raise IndexError("Predicted class index out of range.")
+        raise IndexError("Predicted class ka index galat range me hai.")
     
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
     send_whatsapp_message(image_path, predicted_class, buy_link)
     
-    return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
+    return f'Image {predicted_class} se related hai. [Yahan se kharidein]({buy_link})'
 
 # WhatsApp message bhejne ka function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
-        # Publicly hosted image URL (yahan apna image URL daalna hoga)
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
-
         message = client.messages.create(
-            from_='whatsapp:+14155238886',  # Twilio number
+            from_='whatsapp:+14155238886',  # Twilio ka number
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
             media_url=media_url,  # Public image URL
             to='whatsapp:+917800905998'
         )
-        print("WhatsApp message sent successfully:", message.sid)
+        print("WhatsApp message successfully bheja gaya:", message.sid)
     except Exception as e:
-        print("Error sending WhatsApp message:", e)
+        print("WhatsApp message bhejte waqt error:", e)
 
 # Streamlit file uploader
-st.markdown("### Upload your image below:")
+st.markdown("### Apni image upload karo:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
 
 if uploaded_file is not None:
@@ -87,8 +101,8 @@ if uploaded_file is not None:
         result = classify_images(save_path)
         st.success(result)
     except Exception as e:
-        st.error(f"Error in classification: {e}")
+        st.error(f"Image classification me error: {e}")
 
-    if st.button("Clear Image"):
+    if st.button("Image clear karo"):
         uploaded_file = None
         st.experimental_rerun()
