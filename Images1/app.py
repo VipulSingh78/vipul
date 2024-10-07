@@ -32,7 +32,7 @@ import requests
 import os
 
 # Corrected URL with closing quote
-url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
+url = 'Images1/Vipul_Recog_Model.keras'
 local_filename = os.path.join('Models', 'Vipul_Recog_Model.keras')
 
 os.makedirs('Models', exist_ok=True)
