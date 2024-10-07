@@ -26,13 +26,13 @@ product_links = {
 }
 
 # Model ka path
-model_path = os.path.join('Models', 'Vipul_Recog_Model.h5')
+model_path = os.path.join('Models', 'Vipul_Recog_Model.keras')
 
 # Agar model exist nahi karta toh download karo
 if not os.path.exists(model_path):
     st.info('Model local me nahi mila, download kar rahe hain...')
     try:
-        url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.h5'
+        url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
         os.makedirs('Models', exist_ok=True)
         with requests.get(url, stream=True) as r:
             r.raise_for_status()
