@@ -25,39 +25,36 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-# Corrected URL with closing quote
+# Model download and loading
 url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
 local_filename = os.path.join('Models', 'Vipul_Recog_Model.keras')
 
 os.makedirs('Models', exist_ok=True)
 
-# Downloading the model
+# Download the model if it doesn't exist
+if not os.path.exists(local_filename):
+    try:
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(local_filename, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+        st.write("Model downloaded successfully.")
+    except Exception as e:
+        st.error(f"Error downloading the model: {e}")
+else:
+    st.write("Model already exists locally at:", local_filename)
+
+# **LOAD THE MODEL** - Ensure model is loaded before predictions
 try:
-    with requests.get(url, stream=True) as r:
-        r.raise_for_status()
-        with open(local_filename, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
+    model = load_model(local_filename)  # Load model from the saved file
+    st.write("Model loaded successfully.")
 except Exception as e:
-    st.error(f"Error downloading the model: {e}")
+    st.error(f"Error loading model: {e}")
+    st.stop()  # Stop execution if model loading fails
 
-import os
-import tensorflow as tf
-from tensorflow.keras.models import load_model
-
-# Define the model path
-model_path = os.path.join('Models', 'Vipul_Recog_Model.keras')
-
-# Try loading the model and catch errors
-try:
-    model = load_model(model_path)
-    print("Model loaded successfully")
-except Exception as e:
-    print(f"Error loading model: {e}")
-
-
-# Image classify karne ka function
+# Image classification function
 def classify_images(image_path):
     input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
     input_image_array = tf.keras.utils.img_to_array(input_image)
@@ -77,7 +74,7 @@ def classify_images(image_path):
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
-# WhatsApp message bhejne ka function
+# WhatsApp message sending function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
         # Publicly hosted image URL (yahan apna image URL daalna hoga)
