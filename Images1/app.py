@@ -25,9 +25,21 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-# Model URL and local path
-model_url = 'https://raw.githubusercontent.com/VipulSingh78/vipul/20df1ea393c12e0e1ff97f360e2e281bd594e56c/Images1/Vipul_Recog_Model.keras'
-model_filename = os.path.join('Models', 'Vipul_Recog_Model.keras')
+url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
+local_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
+
+os.makedirs('Models', exist_ok=True)
+
+# Download the model
+try:
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        with open(local_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+except Exception as e:
+    print(f"Error downloading the model: {e}")
 
 # Create 'Models' directory if it doesn't exist
 os.makedirs('Models', exist_ok=True)
