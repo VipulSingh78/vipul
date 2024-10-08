@@ -29,6 +29,7 @@ product_links = {
 model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
 model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
 
+# Create 'Models' directory if it doesn't exist
 os.makedirs('Models', exist_ok=True)
 
 # Function to download model if it doesn't exist
@@ -41,19 +42,15 @@ def download_model():
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
-            # st.success("Model downloaded successfully.")  # Commented out
         except Exception as e:
             st.error(f"Error downloading the model: {e}")
-    # else:
-    #     st.info("Model already exists locally.")  # Commented out
 
 # Download the model
 download_model()
 
-# **LOAD THE MODEL** - Load the model globally
+# Load the model globally
 try:
     model = load_model(model_filename)  # Load the model from the saved file
-    # st.success("Model loaded successfully.")  # Commented out
 except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
@@ -102,10 +99,18 @@ st.markdown("### Upload your image below:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
 
 if uploaded_file is not None:
-    save_path = os.path.join('upload', uploaded_file.name)
+    # Ensure the 'upload' directory exists
     os.makedirs('upload', exist_ok=True)
-    with open(save_path, 'wb') as f:
-        f.write(uploaded_file.getbuffer())
+    
+    save_path = os.path.join('upload', uploaded_file.name)
+    print(f"Saving image to: {save_path}")  # Debug statement
+    
+    try:
+        with open(save_path, 'wb') as f:
+            f.write(uploaded_file.getbuffer())
+        st.success("Image saved successfully!")
+    except Exception as e:
+        st.error(f"Error saving image: {e}")
 
     st.image(uploaded_file, use_column_width=True)
 
