@@ -93,7 +93,6 @@ def send_whatsapp_message(image_path, predicted_class, buy_link):
         print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
         print("Error sending WhatsApp message:", e)
-# Streamlit file uploader
 
 # Streamlit file uploader
 st.markdown("### Upload your image below:")
@@ -102,23 +101,25 @@ uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
 if uploaded_file is not None:
     # Ensure the 'upload' directory exists
     os.makedirs('upload', exist_ok=True)
-
-    save_path = os.path.join('upload', uploaded_file.name)
     
-    # Debugging: Print the path where the image is being saved
-    print(f"Saving image to: {os.path.abspath(save_path)}")  # Print full path
-    print("Current working directory:", os.getcwd())  # Print working directory
+    save_path = os.path.join('upload', uploaded_file.name)
+    print(f"Saving image to: {save_path}")  # Debug statement
     
     try:
-        # Save the image
         with open(save_path, 'wb') as f:
             f.write(uploaded_file.getbuffer())
         st.success("Image saved successfully!")
-
-        # Debugging: List files in the 'upload' directory
-        print("Files in upload directory:", os.listdir('upload'))
-
     except Exception as e:
         st.error(f"Error saving image: {e}")
 
     st.image(uploaded_file, use_column_width=True)
+
+    try:
+        result = classify_images(save_path)
+        st.success(result)
+    except Exception as e:
+        st.error(f"Error in classification: {e}")
+
+    if st.button("Clear Image"):
+        uploaded_file = None
+        st.experimental_rerun()
