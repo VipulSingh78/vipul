@@ -93,7 +93,6 @@ def send_whatsapp_message(image_path, predicted_class, buy_link):
         print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
         print("Error sending WhatsApp message:", e)
-
 # Streamlit file uploader
 st.markdown("### Upload your image below:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
@@ -101,14 +100,17 @@ uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
 if uploaded_file is not None:
     # Ensure the 'upload' directory exists
     os.makedirs('upload', exist_ok=True)
-    
+
     save_path = os.path.join('upload', uploaded_file.name)
-    print(f"Saving image to: {save_path}")  # Debug statement
-    
+    print(f"Saving image to: {os.path.abspath(save_path)}")  # Print full path
+
     try:
         with open(save_path, 'wb') as f:
             f.write(uploaded_file.getbuffer())
         st.success("Image saved successfully!")
+
+        # List files in the upload directory for confirmation
+        print("Files in upload directory:", os.listdir('upload'))
     except Exception as e:
         st.error(f"Error saving image: {e}")
 
