@@ -41,11 +41,11 @@ def download_model():
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
-            st.success("Model downloaded successfully.")
+            # st.success("Model downloaded successfully.")  # Commented out
         except Exception as e:
             st.error(f"Error downloading the model: {e}")
-    else:
-        st.info("Model already exists locally.")
+    # else:
+    #     st.info("Model already exists locally.")  # Commented out
 
 # Download the model
 download_model()
@@ -53,7 +53,7 @@ download_model()
 # **LOAD THE MODEL** - Load the model globally
 try:
     model = load_model(model_filename)  # Load the model from the saved file
-    st.success("Model loaded successfully.")
+    # st.success("Model loaded successfully.")  # Commented out
 except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
