@@ -102,7 +102,7 @@ if uploaded_file is not None:
     # Ensure the 'upload' directory exists
     os.makedirs('upload', exist_ok=True)
     
-    save_path = os.path.join('upload', uploaded_file.name)
+    save_path = os.path.join('Images1/upload', uploaded_file.name)
     print(f"Saving image to: {save_path}")  # Debug statement
     
     try:
