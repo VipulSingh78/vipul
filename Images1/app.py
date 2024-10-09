@@ -7,20 +7,12 @@ from twilio.rest import Client
 import cloudinary
 import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
-import requests  # Import the requests library
+import requests
 
 # Twilio credentials (use secure environment variables in production)
 account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
 auth_token = '40d3d53464a816fb6de7855a640c4194'
 client = Client(account_sid, auth_token)
-
-# Cloudinary configuration
-cloudinary.config( 
-    cloud_name = "dyz86lkav", 
-    api_key = "474734154312119", 
-    api_secret = "<your_api_secret>",  # Replace with your Cloudinary API secret
-    secure=True
-)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
@@ -52,21 +44,18 @@ def download_model():
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
-            st.success("Model downloaded successfully!")
         except Exception as e:
             st.error(f"Error downloading the model: {e}")
-            return False
-    return True
 
 # Download the model
-if download_model():
-    # Load the model
-    try:
-        model = load_model(model_filename)
-    except Exception as e:
-        st.error(f"Error loading model: {e}")
-        model = None
-else:
+download_model()
+
+# Load the model
+try:
+    model = load_model(model_filename)
+    st.success("Model loaded successfully!")
+except Exception as e:
+    st.error(f"Error loading model: {e}")
     model = None
 
 # Image classification function
@@ -92,24 +81,29 @@ def classify_images(image):
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
+# Cloudinary configuration for uploading images
+cloudinary.config(
+    cloud_name = "dyz86lkav", 
+    api_key = "474734154312119", 
+    api_secret = "your_api_secret",
+    secure=True
+)
+
 # WhatsApp message function
 def send_whatsapp_message(image, predicted_class, buy_link):
     try:
-        # Upload image to Cloudinary
+        # Upload the image to Cloudinary
         upload_result = cloudinary.uploader.upload(image)
-        image_url = upload_result.get("secure_url")
+        image_url = upload_result['secure_url']
 
-        if image_url:
-            # Send WhatsApp message with the Cloudinary image URL
-            message = client.messages.create(
-                from_='whatsapp:+14155238886',  # Twilio number
-                body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-                media_url=[image_url],  # Cloudinary image URL
-                to='whatsapp:+917800905998'
-            )
-            print("WhatsApp message sent successfully:", message.sid)
-        else:
-            print("Error: Failed to upload image to Cloudinary.")
+        # Send WhatsApp message with the image and link
+        message = client.messages.create(
+            from_='whatsapp:+14155238886',  # Twilio number
+            body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
+            media_url=[image_url],
+            to='whatsapp:+917800905998'
+        )
+        print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
         print("Error sending WhatsApp message:", e)
 
@@ -127,7 +121,7 @@ if uploaded_file is not None:
     with open(save_path, 'wb') as f:
         f.write(uploaded_file.getbuffer())
 
-    # Show success message
+    st.success(f"Image saved successfully at {save_path}")
     st.image(uploaded_file, use_column_width=True)
 
     # Classify the image
