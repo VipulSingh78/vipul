@@ -107,7 +107,7 @@ if uploaded_file is not None:
         f.write(uploaded_file.getbuffer())
 
     # Show success message
-    st.success(f"Image saved successfully at {save_path}!")
+    st.success(f" {save_path}!")
     st.image(uploaded_file, use_column_width=True)
 
     # Classify the image
