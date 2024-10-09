@@ -2,3 +2,4 @@ numpy
 streamlit
 tensorflow
 twilio
+cloudinary==1.29.0
