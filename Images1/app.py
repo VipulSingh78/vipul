@@ -7,6 +7,7 @@ from twilio.rest import Client
 import cloudinary
 import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
+import requests  # Import the requests library
 
 # Twilio credentials (use secure environment variables in production)
 account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
@@ -51,17 +52,21 @@ def download_model():
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
+            st.success("Model downloaded successfully!")
         except Exception as e:
             st.error(f"Error downloading the model: {e}")
+            return False
+    return True
 
 # Download the model
-download_model()
-
-# Load the model
-try:
-    model = load_model(model_filename)
-except Exception as e:
-    st.error(f"Error loading model: {e}")
+if download_model():
+    # Load the model
+    try:
+        model = load_model(model_filename)
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        model = None
+else:
     model = None
 
 # Image classification function
