@@ -4,12 +4,24 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from twilio.rest import Client
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+from cloudinary.utils import cloudinary_url
 import requests
 
-# Twilio credentials (use secure environment variables in production)
+# Twilio credentials
 account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
 auth_token = '40d3d53464a816fb6de7855a640c4194'
 client = Client(account_sid, auth_token)
+
+# Cloudinary configuration
+cloudinary.config(
+    cloud_name="dyz86lkav", 
+    api_key="474734154312119", 
+    api_secret="your_cloudinary_api_secret",  # Replace with your Cloudinary API secret
+    secure=True
+)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
@@ -28,7 +40,6 @@ product_links = {
 # Model URL and local filename
 model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
 model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
-
 os.makedirs('Models', exist_ok=True)
 
 # Function to download model if it doesn't exist
@@ -73,20 +84,23 @@ def classify_images(image):
         return "Error: Predicted class index out of range."
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    send_whatsapp_message(image, predicted_class, buy_link)
+    upload_and_send_whatsapp(image, predicted_class, buy_link)
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
-# WhatsApp message function
-def send_whatsapp_message(image, predicted_class, buy_link):
+# Upload image to Cloudinary and send WhatsApp message
+def upload_and_send_whatsapp(image_path, predicted_class, buy_link):
     try:
-        media_url = [f'https://your-public-image-url.com/{os.path.basename(image)}']
+        # Upload the image to Cloudinary
+        cloudinary_response = cloudinary.uploader.upload(image_path)
+        media_url = cloudinary_response['secure_url']
 
+        # Send the WhatsApp message with the Cloudinary URL
         message = client.messages.create(
-            from_='whatsapp:+14155238886',  # Twilio number
+            from_='whatsapp:+14155238886',  # Twilio WhatsApp number
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=media_url,  # Public image URL
-            to='whatsapp:+917800905998'
+            media_url=[media_url],
+            to='whatsapp:+917800905998'  # Your verified WhatsApp number
         )
         print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
@@ -107,7 +121,6 @@ if uploaded_file is not None:
         f.write(uploaded_file.getbuffer())
 
     # Show success message
-   
     st.image(uploaded_file, use_column_width=True)
 
     # Classify the image
