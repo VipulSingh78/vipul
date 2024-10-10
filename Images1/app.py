@@ -41,11 +41,8 @@ def download_model():
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
-            # st.success("Model downloaded successfully.")  # Commented out
         except Exception as e:
             st.error(f"Error downloading the model: {e}")
-    # else:
-    #     st.info("Model already exists locally.")  # Commented out
 
 # Download the model
 download_model()
@@ -53,7 +50,6 @@ download_model()
 # **LOAD THE MODEL** - Load the model globally
 try:
     model = load_model(model_filename)  # Load the model from the saved file
-    # st.success("Model loaded successfully.")  # Commented out
 except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
@@ -97,9 +93,15 @@ def send_whatsapp_message(image_path, predicted_class, buy_link):
     except Exception as e:
         print("Error sending WhatsApp message:", e)
 
-# Streamlit file uploader
-st.markdown("### Upload your image below:")
-uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
+# Add HTML for camera access
+st.markdown("""
+    <h3>Take a photo or upload an image</h3>
+    <input type="file" accept="image/*" capture="camera" id="fileInput">
+    <br>
+""", unsafe_allow_html=True)
+
+# Streamlit file uploader for fallback to gallery (in case the user prefers gallery upload)
+uploaded_file = st.file_uploader('Or upload an image from the gallery', type=['jpg', 'jpeg', 'png'])
 
 if uploaded_file is not None:
     save_path = os.path.join('upload', uploaded_file.name)
