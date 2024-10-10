@@ -4,9 +4,6 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from twilio.rest import Client
-import cloudinary
-import cloudinary.uploader
-from cloudinary.utils import cloudinary_url
 import requests
 
 # Twilio credentials (use secure environment variables in production)
@@ -44,26 +41,29 @@ def download_model():
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
+            # st.success("Model downloaded successfully.")  # Commented out
         except Exception as e:
             st.error(f"Error downloading the model: {e}")
+    # else:
+    #     st.info("Model already exists locally.")  # Commented out
 
 # Download the model
 download_model()
 
-# Load the model
+# **LOAD THE MODEL** - Load the model globally
 try:
-    model = load_model(model_filename)
-    st.success("Model loaded successfully!")
+    model = load_model(model_filename)  # Load the model from the saved file
+    # st.success("Model loaded successfully.")  # Commented out
 except Exception as e:
     st.error(f"Error loading model: {e}")
-    model = None
+    model = None  # Ensure the model is None if loading fails
 
 # Image classification function
-def classify_images(image):
+def classify_images(image_path):
     if model is None:
         return "Model is not loaded properly."
 
-    input_image = tf.keras.utils.load_img(image, target_size=(224, 224))
+    input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
     input_image_array = tf.keras.utils.img_to_array(input_image)
     input_image_exp_dim = tf.expand_dims(input_image_array, 0)
 
@@ -77,54 +77,38 @@ def classify_images(image):
         return "Error: Predicted class index out of range."
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    send_whatsapp_message(image, predicted_class, buy_link)
+    send_whatsapp_message(image_path, predicted_class, buy_link)
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
-# Cloudinary configuration for uploading images
-cloudinary.config(
-    cloud_name = "dyz86lkav", 
-    api_key = "474734154312119", 
-    api_secret = "your_api_secret",
-    secure=True
-)
-
 # WhatsApp message function
-def send_whatsapp_message(image, predicted_class, buy_link):
+def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
-        # Upload the image to Cloudinary
-        upload_result = cloudinary.uploader.upload(image)
-        image_url = upload_result['secure_url']
+        # Publicly hosted image URL (replace with actual hosted URL)
+        media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
 
-        # Send WhatsApp message with the image and link
         message = client.messages.create(
             from_='whatsapp:+14155238886',  # Twilio number
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=[image_url],
+            media_url=media_url,  # Public image URL
             to='whatsapp:+917800905998'
         )
         print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
         print("Error sending WhatsApp message:", e)
 
-# Upload folder path
-upload_folder = 'uploads'
-os.makedirs(upload_folder, exist_ok=True)
-
 # Streamlit file uploader
 st.markdown("### Upload your image below:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
 
 if uploaded_file is not None:
-    # Save uploaded image to local 'uploads' folder
-    save_path = os.path.join(upload_folder, uploaded_file.name)
+    save_path = os.path.join('upload', uploaded_file.name)
+    os.makedirs('upload', exist_ok=True)
     with open(save_path, 'wb') as f:
         f.write(uploaded_file.getbuffer())
 
-    st.success(f"Image saved successfully at {save_path}")
     st.image(uploaded_file, use_column_width=True)
 
-    # Classify the image
     try:
         result = classify_images(save_path)
         st.success(result)
