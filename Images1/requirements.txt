@@ -3,6 +3,5 @@ streamlit
 tensorflow
 twilio
 cloudinary
- base64
 python-3.11.5
 
