@@ -5,15 +5,19 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from twilio.rest import Client
 import requests
+import openai  # Import the OpenAI library
+
+# Set up OpenAI API key
+openai.api_key = os.getenv('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')  # Ensure this environment variable is set
 
 # Twilio credentials (use secure environment variables in production)
-account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
-auth_token = '40d3d53464a816fb6de7855a640c4194'
+account_sid = os.getenv('TWILIO_ACCOUNT_SID')  # Replace with your Twilio Account SID
+auth_token = os.getenv('TWILIO_AUTH_TOKEN')    # Replace with your Twilio Auth Token
 client = Client(account_sid, auth_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
-st.subheader('Upload an image of a product, and get recommendations!')
+st.subheader('Upload an image of a product, chat with us, and get recommendations!')
 
 # Product names and links
 product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
@@ -26,7 +30,7 @@ product_links = {
 }
 
 # Model URL and local filename
-model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
+model_url = 'https://your_model_url.com/Vipul_Recog_Model.h5'  # Update with your model URL
 model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
 
 os.makedirs('Models', exist_ok=True)
@@ -35,28 +39,24 @@ os.makedirs('Models', exist_ok=True)
 def download_model():
     if not os.path.exists(model_filename):
         try:
-            with requests.get(model_url, stream=True) as r:
-                r.raise_for_status()
-                with open(model_filename, 'wb') as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-            # st.success("Model downloaded successfully.")  # Commented out
+            response = requests.get(model_url, stream=True)
+            response.raise_for_status()
+            with open(model_filename, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
         except Exception as e:
             st.error(f"Error downloading the model: {e}")
-    # else:
-    #     st.info("Model already exists locally.")  # Commented out
 
 # Download the model
 download_model()
 
-# **LOAD THE MODEL** - Load the model globally
+# Load the model
 try:
-    model = load_model(model_filename)  # Load the model from the saved file
-    # st.success("Model loaded successfully.")  # Commented out
+    model = load_model(model_filename)
 except Exception as e:
     st.error(f"Error loading model: {e}")
-    model = None  # Ensure the model is None if loading fails
+    model = None
 
 # Image classification function
 def classify_images(image_path):
@@ -65,12 +65,12 @@ def classify_images(image_path):
 
     input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
     input_image_array = tf.keras.utils.img_to_array(input_image)
-    input_image_exp_dim = tf.expand_dims(input_image_array, 0)
+    input_image_exp_dim = np.expand_dims(input_image_array, axis=0)
 
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
-    
+
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
     else:
@@ -78,20 +78,20 @@ def classify_images(image_path):
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
     send_whatsapp_message(image_path, predicted_class, buy_link)
-    
+
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
 # WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
-        # Publicly hosted image URL (replace with actual hosted URL)
+        # Replace with actual hosted URL of the image
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
 
         message = client.messages.create(
-            from_='whatsapp:+14155238886',  # Twilio number
+            from_='whatsapp:+14155238886',  # Your Twilio WhatsApp number
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
             media_url=media_url,  # Public image URL
-            to='whatsapp:+917800905998'
+            to='whatsapp:+your_phone_number'  # Replace with your WhatsApp number
         )
         print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
@@ -115,6 +115,34 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"Error in classification: {e}")
 
-    if st.button("Clear Image"):
-        uploaded_file = None
-        st.experimental_rerun()
+# Chatbot Interface
+st.markdown("### Chat with us:")
+
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
+
+user_input = st.text_input("You:", key="input")
+
+if st.button("Send"):
+    if user_input:
+        # Append user's message to the session state
+        st.session_state.messages.append({"role": "user", "content": user_input})
+
+        # Call OpenAI API for chatbot response
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",  # Use 'gpt-4' if available
+                messages=st.session_state.messages
+            )
+            assistant_message = response['choices'][0]['message']['content']
+            # Append assistant's response to the session state
+            st.session_state.messages.append({"role": "assistant", "content": assistant_message})
+
+            # Display conversation
+            for message in st.session_state.messages:
+                if message['role'] == 'user':
+                    st.write(f"**You:** {message['content']}")
+                else:
+                    st.write(f"**Assistant:** {message['content']}")
+        except Exception as e:
+            st.error(f"Error communicating with the chatbot: {e}")
