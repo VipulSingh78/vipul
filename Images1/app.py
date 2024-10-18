@@ -3,10 +3,8 @@ import numpy as np
 import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from twilio.rest import Client
 import requests
-from sklearn.metrics import confusion_matrix
 
 # Twilio credentials (use secure environment variables in production)
 account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
@@ -49,17 +47,6 @@ def download_model():
 # Download the model
 download_model()
 
-# Data augmentation
-datagen = ImageDataGenerator(
-    rotation_range=30,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    fill_mode='nearest'
-)
-
 # **LOAD THE MODEL** - Load the model globally
 try:
     model = load_model(model_filename)  # Load the model from the saved file
@@ -80,16 +67,15 @@ def classify_images(image_path):
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
-    
+
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
+        buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
+        send_whatsapp_message(image_path, predicted_class, buy_link)
+        return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
     else:
-        return "Error: Product not recognized. For assistance, call customer support at +917800905998."
-
-    buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    send_whatsapp_message(image_path, predicted_class, buy_link)
-    
-    return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
+        # If product is not recognized
+        return "The product is not recognized. Please contact customer support at +917800905998."
 
 # WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
@@ -128,10 +114,3 @@ if uploaded_file is not None:
     if st.button("Clear Image"):
         uploaded_file = None
         st.experimental_rerun()
-
-# Confusion matrix to analyze model performance
-def evaluate_model(x_test, y_test):
-    y_pred = model.predict(x_test)
-    y_true = np.argmax(y_test, axis=1)
-    conf_matrix = confusion_matrix(y_true, np.argmax(y_pred, axis=1))
-    print("Confusion Matrix:\n", conf_matrix)
