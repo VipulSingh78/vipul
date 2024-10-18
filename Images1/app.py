@@ -55,7 +55,7 @@ except Exception as e:
     model = None  # Ensure the model is None if loading fails
 
 # Image classification function
-def classify_images(image_path):
+def classify_images(image_path, confidence_threshold=0.5):  # Set confidence threshold
     if model is None:
         return "Model is not loaded properly."
 
@@ -67,6 +67,11 @@ def classify_images(image_path):
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
+    confidence = result[predicted_class_index]  # Get confidence for the top prediction
+
+    if confidence < confidence_threshold:
+        # If confidence is below the threshold, show customer support message
+        return f"The product is not recognized with confidence. Please contact customer support at +917800905998."
 
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
@@ -74,7 +79,7 @@ def classify_images(image_path):
         send_whatsapp_message(image_path, predicted_class, buy_link)
         return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
     else:
-        # If product is not recognized
+        # If product is not recognized at all
         return "The product is not recognized. Please contact customer support at +917800905998."
 
 # WhatsApp message function
