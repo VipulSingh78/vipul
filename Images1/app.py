@@ -13,7 +13,7 @@ client = Client(account_sid, auth_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
-st.subheader('Upload an image of a product, and get recommendations!')
+st.subheader('Upload an image of a product,')
 
 # Product names and links
 product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
@@ -81,7 +81,6 @@ def classify_images(image_path):
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
-# WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
         # Publicly hosted image URL (replace with actual hosted URL)
@@ -95,7 +94,8 @@ def send_whatsapp_message(image_path, predicted_class, buy_link):
         )
         print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
-        print("Error sending WhatsApp message:", e)
+        print(f"Error sending WhatsApp message: {e}")
+        st.error(f"Error sending WhatsApp message: {e}")
 
 # Streamlit file uploader
 st.markdown("### Upload your image below:")
