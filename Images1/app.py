@@ -50,12 +50,13 @@ download_model()
 # **LOAD THE MODEL** - Load the model globally
 try:
     model = load_model(model_filename)  # Load the model from the saved file
+    st.write("Model loaded successfully.")
 except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
 # Image classification function with confidence threshold
-def classify_images(image_path, confidence_threshold=0.7):  # Set higher confidence threshold
+def classify_images(image_path, confidence_threshold=0.5):  # Lower confidence threshold to 0.5
     if model is None:
         return "Model is not loaded properly."
 
@@ -68,6 +69,9 @@ def classify_images(image_path, confidence_threshold=0.7):  # Set higher confide
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
     confidence = result[predicted_class_index]  # Get confidence for the top prediction
+
+    st.write(f"Predictions: {predictions}")
+    st.write(f"Predicted class: {product_names[predicted_class_index]}, Confidence: {confidence}")
 
     # Check if the confidence level is below the threshold
     if confidence < confidence_threshold:
