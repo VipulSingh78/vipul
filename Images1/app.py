@@ -50,13 +50,12 @@ download_model()
 # **LOAD THE MODEL** - Load the model globally
 try:
     model = load_model(model_filename)  # Load the model from the saved file
-    st.write("Model loaded successfully.")
 except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
 # Image classification function with confidence threshold
-def classify_images(image_path, confidence_threshold=0.5):  # Lower confidence threshold to 0.5
+def classify_images(image_path, confidence_threshold=0.5):  # Set confidence threshold
     if model is None:
         return "Model is not loaded properly."
 
@@ -70,9 +69,6 @@ def classify_images(image_path, confidence_threshold=0.5):  # Lower confidence t
     predicted_class_index = np.argmax(result)
     confidence = result[predicted_class_index]  # Get confidence for the top prediction
 
-    st.write(f"Predictions: {predictions}")
-    st.write(f"Predicted class: {product_names[predicted_class_index]}, Confidence: {confidence}")
-
     # Check if the confidence level is below the threshold
     if confidence < confidence_threshold:
         # Display customer support message if confidence is too low
@@ -81,17 +77,12 @@ def classify_images(image_path, confidence_threshold=0.5):  # Lower confidence t
     # If confidence is high enough, check the predicted class
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
-        
-        # Add logic to treat irrelevant predictions like 'Camera' as 'Not Recognized'
-        if predicted_class == 'CCTV CAMERA' and 'camera' not in image_path.lower():
-            return f"The product is not recognized. Please contact customer support at +917800905998."
-        
         buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
         send_whatsapp_message(image_path, predicted_class, buy_link)
         return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
     else:
         # Display customer support message if the class is not recognized
-        return f"The product is not recognized. Please contact customer support at +917800905998."
+        return "The product is not recognized. Please contact customer support at +917800905998."
 
 # WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
