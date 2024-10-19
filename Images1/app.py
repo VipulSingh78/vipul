@@ -55,7 +55,7 @@ except Exception as e:
     model = None  # Ensure the model is None if loading fails
 
 # Image classification function with stricter confidence threshold
-def classify_images(image_path, confidence_threshold=0.7):  # Increased confidence threshold to 0.7
+def classify_images(image_path, confidence_threshold=0.7):  # Set confidence threshold to 0.7
     if model is None:
         return "Model is not loaded properly."
 
@@ -73,16 +73,6 @@ def classify_images(image_path, confidence_threshold=0.7):  # Increased confiden
     if confidence < confidence_threshold:
         # Display customer support message if confidence is too low
         return f"The product is not recognized with confidence. Please contact customer support at +917800905998."
-
-    # If confidence is high enough, check the predicted class
-    if 0 <= predicted_class_index < len(product_names):
-        predicted_class = product_names[predicted_class_index]
-        buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-        send_whatsapp_message(image_path, predicted_class, buy_link)
-        return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
-    else:
-        # Display customer support message if the class is not recognized
-        return "The product is not recognized. Please contact customer support at +917800905998."
 
     # If confidence is high enough, check the predicted class
     if 0 <= predicted_class_index < len(product_names):
