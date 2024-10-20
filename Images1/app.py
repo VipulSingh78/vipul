@@ -54,8 +54,8 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
-# Image classification function with stricter confidence threshold
-def classify_images(image_path, confidence_threshold=0.7):  # Set confidence threshold to 0.7
+# Image classification function with higher confidence threshold and similarity checks
+def classify_images(image_path, confidence_threshold=0.8):  # Set confidence threshold to 0.8
     if model is None:
         return "Model is not loaded properly."
 
@@ -73,6 +73,12 @@ def classify_images(image_path, confidence_threshold=0.7):  # Set confidence thr
     if confidence < confidence_threshold:
         # Display customer support message if confidence is too low
         return f"The product is not recognized with confidence. Please contact customer support at +917800905998."
+
+    # Check if the class is recognized with a reasonable confidence difference
+    sorted_confidences = np.sort(result)[::-1]
+    if (sorted_confidences[0] - sorted_confidences[1]) < 0.1:
+        # If the difference between the top 2 classes is small, suggest uncertainty
+        return f"The product seems ambiguous. Please contact customer support at +917800905998 for assistance."
 
     # If confidence is high enough, check the predicted class
     if 0 <= predicted_class_index < len(product_names):
