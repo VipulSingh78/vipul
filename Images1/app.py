@@ -54,8 +54,8 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
-# Image classification function with higher confidence threshold and similarity checks
-def classify_images(image_path, confidence_threshold=0.8):  # Set confidence threshold to 0.8
+# Image classification function with stricter confidence threshold and class probabilities
+def classify_images(image_path, confidence_threshold=0.5):  # Set confidence threshold
     if model is None:
         return "Model is not loaded properly."
 
@@ -66,28 +66,27 @@ def classify_images(image_path, confidence_threshold=0.8):  # Set confidence thr
 
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
+
+    # Print all class probabilities
+    st.write("Class Probabilities:")
+    for i, prob in enumerate(result):
+        st.write(f"{product_names[i]}: {prob*100:.2f}%")
+    
+    # Get top predicted class and confidence
     predicted_class_index = np.argmax(result)
     confidence = result[predicted_class_index]  # Get confidence for the top prediction
 
-    # Check if the confidence level is below the threshold
+    # If confidence is below the threshold, suggest customer support
     if confidence < confidence_threshold:
-        # Display customer support message if confidence is too low
-        return f"The product is not recognized with confidence. Please contact customer support at +917800905998."
+        return f"The product is not recognized with high confidence. Please contact customer support at +917800905998."
 
-    # Check if the class is recognized with a reasonable confidence difference
-    sorted_confidences = np.sort(result)[::-1]
-    if (sorted_confidences[0] - sorted_confidences[1]) < 0.1:
-        # If the difference between the top 2 classes is small, suggest uncertainty
-        return f"The product seems ambiguous. Please contact customer support at +917800905998 for assistance."
-
-    # If confidence is high enough, check the predicted class
+    # Check if the predicted class index is valid
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
         buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
         send_whatsapp_message(image_path, predicted_class, buy_link)
         return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
     else:
-        # Display customer support message if the class is not recognized
         return "The product is not recognized. Please contact customer support at +917800905998."
 
 # WhatsApp message function
