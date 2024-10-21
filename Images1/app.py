@@ -54,44 +54,33 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
-# Image classification function with class size validation
-def classify_images(image_path, confidence_threshold=0.5):  # Set confidence threshold
+# Image classification function with confidence threshold
+def classify_images(image_path, confidence_threshold=0.5):
     if model is None:
         return "Model is not loaded properly."
 
     input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
     input_image_array = tf.keras.utils.img_to_array(input_image)
-    input_image_array = tf.keras.applications.mobilenet_v2.preprocess_input(input_image_array)
-    input_image_exp_dim = np.expand_dims(input_image_array, 0)
+    input_image_exp_dim = tf.expand_dims(input_image_array, 0)
 
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
-
-    # Check if the number of classes in the model output matches the expected product names
-    if len(result) != len(product_names):
-        return f"Model returned {len(result)} classes, but expected {len(product_names)}. Please check your model."
-
-    # Print all class probabilities
-    st.write("Class Probabilities:")
-    for i, prob in enumerate(result):
-        st.write(f"{product_names[i]}: {prob*100:.2f}%")
-
-    # Get top predicted class and confidence
     predicted_class_index = np.argmax(result)
-    confidence = result[predicted_class_index]  # Get confidence for the top prediction
+    predicted_confidence = result[predicted_class_index]
+    
+    # Check confidence level
+    if predicted_confidence < confidence_threshold:
+        return "Error: The image doesn't match any known product with high confidence."
 
-    # If confidence is below the threshold, suggest customer support
-    if confidence < confidence_threshold:
-        return f"The product is not recognized with high confidence. Please contact customer support at +917800905998."
-
-    # Check if the predicted class index is valid
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
-        buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-        send_whatsapp_message(image_path, predicted_class, buy_link)
-        return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
     else:
-        return "The product is not recognized. Please contact customer support at +917800905998."
+        return "Error: Predicted class index out of range."
+
+    buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
+    send_whatsapp_message(image_path, predicted_class, buy_link)
+    
+    return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
 # WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
