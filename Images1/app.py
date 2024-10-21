@@ -54,7 +54,7 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
-# Image classification function with stricter confidence threshold and class probabilities
+# Image classification function with class size validation
 def classify_images(image_path, confidence_threshold=0.5):  # Set confidence threshold
     if model is None:
         return "Model is not loaded properly."
@@ -67,11 +67,15 @@ def classify_images(image_path, confidence_threshold=0.5):  # Set confidence thr
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
 
+    # Check if the number of classes in the model output matches the expected product names
+    if len(result) != len(product_names):
+        return f"Model returned {len(result)} classes, but expected {len(product_names)}. Please check your model."
+
     # Print all class probabilities
     st.write("Class Probabilities:")
     for i, prob in enumerate(result):
         st.write(f"{product_names[i]}: {prob*100:.2f}%")
-    
+
     # Get top predicted class and confidence
     predicted_class_index = np.argmax(result)
     confidence = result[predicted_class_index]  # Get confidence for the top prediction
