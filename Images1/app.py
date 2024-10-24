@@ -68,6 +68,9 @@ def classify_images(image_path, confidence_threshold=0.6):
     predicted_class_index = np.argmax(result)
     predicted_confidence = result[predicted_class_index]
     
+    # Logging the confidence score
+    st.write(f"Confidence Score: {predicted_confidence * 100:.2f}%")
+
     # Check confidence level
     if predicted_confidence < confidence_threshold:
         return "Error: The image doesn't match any known product with high confidence."
