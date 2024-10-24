@@ -85,7 +85,7 @@ def classify_images(image_path, confidence_threshold=0.8):
     predicted_confidence = result[predicted_class_index]
 
     if predicted_confidence < confidence_threshold:
-        return "Error: The image doesn't match any known product with high confidence."
+        return "Error: The image doesn't match any known product."
 
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
