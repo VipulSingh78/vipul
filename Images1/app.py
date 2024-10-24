@@ -55,7 +55,7 @@ except Exception as e:
     model = None  # Ensure the model is None if loading fails
 
 # Image classification function with confidence threshold
-def classify_images(image_path, confidence_threshold=0.5):
+def classify_images(image_path, confidence_threshold=0.6):
     if model is None:
         return "Model is not loaded properly."
 
@@ -78,6 +78,8 @@ def classify_images(image_path, confidence_threshold=0.5):
         return "Error: Predicted class index out of range."
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
+    
+    # Send WhatsApp message only if the prediction is correct
     send_whatsapp_message(image_path, predicted_class, buy_link)
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
