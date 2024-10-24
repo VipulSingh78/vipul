@@ -3,10 +3,11 @@ import numpy as np
 import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from twilio.rest import Client
 import requests
 
-# Twilio credentials (use secure environment variables in production)
+# Twilio credentials
 account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
 auth_token = '40d3d53464a816fb6de7855a640c4194'
 client = Client(account_sid, auth_token)
@@ -25,55 +26,65 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-# Model URL and local filename
-model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
-model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
+# Load or fine-tune model
+model_filename = 'fine_tuned_mobilenet_model.h5'
 
-os.makedirs('Models', exist_ok=True)
+def fine_tune_model():
+    base_model = tf.keras.applications.MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
+    base_model.trainable = False  # Freeze the convolutional base
 
-# Function to download model if it doesn't exist
-def download_model():
-    if not os.path.exists(model_filename):
-        try:
-            with requests.get(model_url, stream=True) as r:
-                r.raise_for_status()
-                with open(model_filename, 'wb') as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-        except Exception as e:
-            st.error(f"Error downloading the model: {e}")
+    # Add classification head for product categories
+    model = tf.keras.Sequential([
+        base_model,
+        tf.keras.layers.GlobalAveragePooling2D(),
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dense(len(product_names), activation='softmax')
+    ])
 
-# Download the model
-download_model()
+    # Compile the model
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-# **LOAD THE MODEL** - Load the model globally
-try:
-    model = load_model(model_filename)  # Load the model from the saved file
-except Exception as e:
-    st.error(f"Error loading model: {e}")
-    model = None  # Ensure the model is None if loading fails
+    # Assume the dataset is in folders corresponding to each class
+    train_data_dir = 'your_dataset/train'
+    validation_data_dir = 'your_dataset/validation'
 
-# Image classification function with confidence threshold
-def classify_images(image_path, confidence_threshold=0.6):
-    if model is None:
-        return "Model is not loaded properly."
+    # Data augmentation
+    train_datagen = ImageDataGenerator(rescale=1./255, rotation_range=20, zoom_range=0.2, horizontal_flip=True)
+    val_datagen = ImageDataGenerator(rescale=1./255)
 
+    # Load dataset
+    train_generator = train_datagen.flow_from_directory(
+        train_data_dir, target_size=(224, 224), batch_size=32, class_mode='categorical')
+
+    validation_generator = val_datagen.flow_from_directory(
+        validation_data_dir, target_size=(224, 224), batch_size=32, class_mode='categorical')
+
+    # Fine-tune the model
+    model.fit(train_generator, epochs=10, validation_data=validation_generator)
+
+    # Save the fine-tuned model
+    model.save(model_filename)
+
+    return model
+
+# Check if the model exists, otherwise fine-tune it
+if not os.path.exists(model_filename):
+    model = fine_tune_model()
+else:
+    model = load_model(model_filename)
+
+# Classification function with confidence threshold
+def classify_images(image_path, confidence_threshold=0.8):
     input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
     input_image_array = tf.keras.utils.img_to_array(input_image)
-    input_image_exp_dim = tf.expand_dims(input_image_array, 0)
+    input_image_expanded = np.expand_dims(input_image_array, axis=0) / 255.0  # Normalize
 
-    predictions = model.predict(input_image_exp_dim)
+    predictions = model.predict(input_image_expanded)
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
     predicted_confidence = result[predicted_class_index]
-    
-    # Logging the confidence score
-    st.write(f"Confidence Score: {predicted_confidence * 100:.2f}%")
-
-    # Check confidence level
-    if predicted_confidence < confidence_threshold:
-        return "Error: The image doesn't match any known product with high confidence."
+if predicted_confidence < confidence_threshold:
+    return 'Error: The image doesn\'t match any known product. Connect Customer Care at <a href="tel:+917800905998">7800905998</a>.'
 
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
@@ -81,22 +92,19 @@ def classify_images(image_path, confidence_threshold=0.6):
         return "Error: Predicted class index out of range."
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    
-    # Send WhatsApp message only if the prediction is correct
     send_whatsapp_message(image_path, predicted_class, buy_link)
-    
+
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
 # WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
-        # Publicly hosted image URL (replace with actual hosted URL)
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
 
         message = client.messages.create(
-            from_='whatsapp:+14155238886',  # Twilio number
+            from_='whatsapp:+14155238886',
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=media_url,  # Public image URL
+            media_url=media_url,
             to='whatsapp:+917800905998'
         )
         print("WhatsApp message sent successfully:", message.sid)
