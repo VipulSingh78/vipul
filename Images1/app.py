@@ -54,8 +54,8 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
-# Image classification function with stricter confidence threshold
-def classify_images(image_path, confidence_threshold=0.9):
+# Image classification function with confidence threshold
+def classify_images(image_path, confidence_threshold=0.5):
     if model is None:
         return "Model is not loaded properly."
 
