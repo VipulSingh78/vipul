@@ -83,14 +83,19 @@ def classify_images(image_path, confidence_threshold=0.5):
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
 # WhatsApp message function
-def send_whatsapp_message(image_path, predicted_class, buy_link):
+def send_whatsapp_message(image_path, predicted_class, buy_link, customer_message=None):
     try:
         # Publicly hosted image URL (replace with actual hosted URL)
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
+        
+        # Add the customer's message to the WhatsApp body if provided
+        body_message = f"Classification Result: {predicted_class}. Buy here: {buy_link}"
+        if customer_message:
+            body_message += f"\nCustomer Message: {customer_message}"
 
         message = client.messages.create(
             from_='whatsapp:+14155238886',  # Twilio number
-            body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
+            body=body_message,
             media_url=media_url,  # Public image URL
             to='whatsapp:+917800905998'
         )
@@ -101,6 +106,10 @@ def send_whatsapp_message(image_path, predicted_class, buy_link):
 # Streamlit file uploader
 st.markdown("### Upload your image below:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
+
+# Input for customer message
+st.markdown("### Describe your problem:")
+customer_message = st.text_area('Enter your message here')
 
 if uploaded_file is not None:
     save_path = os.path.join('upload', uploaded_file.name)
@@ -113,9 +122,11 @@ if uploaded_file is not None:
     try:
         result = classify_images(save_path)
         st.success(result)
+        # Send WhatsApp message with the image classification and customer message
+        send_whatsapp_message(save_path, result, product_links.get(result, ""), customer_message)
     except Exception as e:
         st.error(f"Error in classification: {e}")
 
     if st.button("Clear Image"):
         uploaded_file = None
-        st.experimental_rerun()  
+        st.experimental_rerun()
