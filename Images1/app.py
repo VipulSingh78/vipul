@@ -109,17 +109,25 @@ show_camera = st.button("Capture Image")
 if show_camera:
     captured_image = st.camera_input("Capture Image")
 
-# Choose the captured image or uploaded file if available
-image_data = uploaded_file if uploaded_file else captured_image if show_camera and captured_image else None
-
-if image_data is not None:
-    # Save and display image
-    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
-    os.makedirs('upload', exist_ok=True)
+# Process the captured image or uploaded file if available
+if uploaded_file is not None:
+    # Save and process uploaded file
+    image_data = uploaded_file
+    save_path = os.path.join('upload', image_data.name)
     with open(save_path, 'wb') as f:
-        f.write(image_data.getbuffer() if uploaded_file else captured_image.getvalue())
+        f.write(image_data.getbuffer())
 
-    st.image(image_data, use_column_width=True)
+elif show_camera and captured_image is not None:
+    # Save and process captured image
+    save_path = os.path.join('upload', 'captured_image.png')
+    with open(save_path, 'wb') as f:
+        f.write(captured_image.getvalue())
+else:
+    save_path = None
+
+if save_path:
+    # Display image and classify
+    st.image(save_path, use_column_width=True)
 
     try:
         result = classify_images(save_path)
@@ -128,5 +136,5 @@ if image_data is not None:
         st.error(f"Error in classification: {e}")
 
     if st.button("Clear Image"):
-        uploaded_file = None
+        save_path = None
         st.experimental_rerun()
