@@ -98,13 +98,19 @@ def send_whatsapp_message(image_path, predicted_class, buy_link):
     except Exception as e:
         print("Error sending WhatsApp message:", e)
 
-# Streamlit camera input and file uploader
+# Streamlit file uploader and camera capture button
 st.markdown("### Upload your image below or capture directly from camera:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
-captured_image = st.camera_input("Capture Image")
+
+# Button to show the camera input widget
+show_camera = st.button("Capture Image")
+
+# Display the camera input only if the button is clicked
+if show_camera:
+    captured_image = st.camera_input("Capture Image")
 
 # Choose the captured image or uploaded file if available
-image_data = uploaded_file if uploaded_file else captured_image
+image_data = uploaded_file if uploaded_file else captured_image if show_camera and captured_image else None
 
 if image_data is not None:
     # Save and display image
