@@ -29,7 +29,9 @@ product_links = {
 model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
 model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
 
+# Ensure 'Models' and 'upload' directories exist
 os.makedirs('Models', exist_ok=True)
+os.makedirs('upload', exist_ok=True)
 
 # Function to download model if it doesn't exist
 def download_model():
@@ -47,7 +49,7 @@ def download_model():
 # Download the model
 download_model()
 
-# **LOAD THE MODEL** - Load the model globally
+# Load the model
 try:
     model = load_model(model_filename)  # Load the model from the saved file
 except Exception as e:
@@ -85,13 +87,11 @@ def classify_images(image_path, confidence_threshold=0.5):
 # WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
-        # Publicly hosted image URL (replace with actual hosted URL)
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
-
         message = client.messages.create(
-            from_='whatsapp:+14155238886',  # Twilio number
+            from_='whatsapp:+14155238886',
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=media_url,  # Public image URL
+            media_url=media_url,
             to='whatsapp:+917800905998'
         )
         print("WhatsApp message sent successfully:", message.sid)
@@ -111,14 +111,12 @@ if show_camera:
 
 # Process the captured image or uploaded file if available
 if uploaded_file is not None:
-    # Save and process uploaded file
     image_data = uploaded_file
     save_path = os.path.join('upload', image_data.name)
     with open(save_path, 'wb') as f:
         f.write(image_data.getbuffer())
 
 elif show_camera and captured_image is not None:
-    # Save and process captured image
     save_path = os.path.join('upload', 'captured_image.png')
     with open(save_path, 'wb') as f:
         f.write(captured_image.getvalue())
