@@ -29,9 +29,7 @@ product_links = {
 model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
 model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
 
-# Ensure 'Models' and 'upload' directories exist
 os.makedirs('Models', exist_ok=True)
-os.makedirs('upload', exist_ok=True)
 
 # Function to download model if it doesn't exist
 def download_model():
@@ -49,7 +47,7 @@ def download_model():
 # Download the model
 download_model()
 
-# Load the model
+# **LOAD THE MODEL** - Load the model globally
 try:
     model = load_model(model_filename)  # Load the model from the saved file
 except Exception as e:
@@ -87,45 +85,35 @@ def classify_images(image_path, confidence_threshold=0.5):
 # WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
+        # Publicly hosted image URL (replace with actual hosted URL)
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
+
         message = client.messages.create(
-            from_='whatsapp:+14155238886',
+            from_='whatsapp:+14155238886',  # Twilio number
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=media_url,
+            media_url=media_url,  # Public image URL
             to='whatsapp:+917800905998'
         )
         print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
         print("Error sending WhatsApp message:", e)
 
-# Streamlit file uploader and camera capture button
+# Streamlit camera input and file uploader
 st.markdown("### Upload your image below or capture directly from camera:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
+captured_image = st.camera_input("Capture Image")
 
-# Button to show the camera input widget
-show_camera = st.button("Capture Image")
+# Choose the captured image or uploaded file if available
+image_data = uploaded_file if uploaded_file else captured_image
 
-# Display the camera input only if the button is clicked
-if show_camera:
-    captured_image = st.camera_input("Capture Image")
-
-# Process the captured image or uploaded file if available
-if uploaded_file is not None:
-    image_data = uploaded_file
-    save_path = os.path.join('upload', image_data.name)
+if image_data is not None:
+    # Save and display image
+    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
+    os.makedirs('upload', exist_ok=True)
     with open(save_path, 'wb') as f:
-        f.write(image_data.getbuffer())
+        f.write(image_data.getbuffer() if uploaded_file else captured_image.getvalue())
 
-elif show_camera and captured_image is not None:
-    save_path = os.path.join('upload', 'captured_image.png')
-    with open(save_path, 'wb') as f:
-        f.write(captured_image.getvalue())
-else:
-    save_path = None
-
-if save_path:
-    # Display image and classify
-    st.image(save_path, use_column_width=True)
+    st.image(image_data, use_column_width=True)
 
     try:
         result = classify_images(save_path)
@@ -134,5 +122,5 @@ if save_path:
         st.error(f"Error in classification: {e}")
 
     if st.button("Clear Image"):
-        save_path = None
+        uploaded_file = None
         st.experimental_rerun()
