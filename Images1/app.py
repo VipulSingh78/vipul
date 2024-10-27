@@ -13,7 +13,7 @@ client = Client(account_sid, auth_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
-st.subheader('Upload an image of a product, and get recommendations!')
+st.subheader('Upload or capture an image of a product, and get recommendations!')
 
 # Product names and links
 product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
@@ -103,10 +103,12 @@ st.markdown("### Upload your image below or capture directly from camera:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
 captured_image = st.camera_input("Capture Image")
 
-image_data = uploaded_file or captured_image
+# Choose the captured image or uploaded file if available
+image_data = uploaded_file if uploaded_file else captured_image
 
 if image_data is not None:
-    save_path = os.path.join('upload', image_data.name if uploaded_file else "captured_image.png")
+    # Save and display image
+    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
     os.makedirs('upload', exist_ok=True)
     with open(save_path, 'wb') as f:
         f.write(image_data.getbuffer() if uploaded_file else captured_image.getvalue())
