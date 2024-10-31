@@ -119,4 +119,5 @@ if uploaded_file or captured_image:
         st.error(f"Error in classification: {e}")
 
 else:
-    st.warning("Please upload an image or capture one using the camera.")
+    # Display an error message if no image is provided
+    st.error("Please upload an image or capture one using the camera.")
