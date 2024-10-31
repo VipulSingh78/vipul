@@ -47,7 +47,7 @@ def download_model():
 # Download the model
 download_model()
 
-# Load the model
+# **LOAD THE MODEL** - Load the model globally
 try:
     model = load_model(model_filename)  # Load the model from the saved file
 except Exception as e:
@@ -55,11 +55,13 @@ except Exception as e:
     model = None  # Ensure the model is None if loading fails
 
 # Image classification function with confidence threshold
-def classify_image_array(image_array, confidence_threshold=0.5):
+def classify_images(image_path, confidence_threshold=0.7):  # Increase threshold as needed
     if model is None:
         return "Model is not loaded properly."
 
-    input_image_exp_dim = tf.expand_dims(image_array, 0)
+    input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
+    input_image_array = tf.keras.utils.img_to_array(input_image)
+    input_image_exp_dim = tf.expand_dims(input_image_array, 0)
 
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
@@ -76,48 +78,51 @@ def classify_image_array(image_array, confidence_threshold=0.5):
         return "Error: Predicted class index out of range."
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    send_whatsapp_message(predicted_class, buy_link)
+    send_whatsapp_message(image_path, predicted_class, buy_link)
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
 # WhatsApp message function
-def send_whatsapp_message(predicted_class, buy_link):
+def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
+        # Publicly hosted image URL (replace with actual hosted URL)
+        media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
+
         message = client.messages.create(
             from_='whatsapp:+14155238886',  # Twilio number
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
+            media_url=media_url,  # Public image URL
             to='whatsapp:+917800905998'
         )
         print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
         print("Error sending WhatsApp message:", e)
 
-# Streamlit file uploader and camera input directly
+# Streamlit camera input and file uploader
 st.markdown("### Upload your image below or capture directly from camera:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
 captured_image = st.camera_input("Capture Image")
 
-# Check if either an uploaded file or captured image is provided
-if uploaded_file or captured_image:
-    # Process the uploaded image or captured image
-    if uploaded_file:
-        image_data = uploaded_file
-        image_array = tf.keras.utils.img_to_array(tf.keras.utils.load_img(image_data, target_size=(224, 224)))
-    else:
-        # Convert captured image data directly to an array
-        image_data = captured_image
-        image_array = tf.image.decode_image(image_data.read(), channels=3)
-        image_array = tf.image.resize(image_array, [224, 224])
+# Choose the captured image or uploaded file if available
+image_data = uploaded_file if uploaded_file else captured_image
 
-    # Display the image
+if image_data is not None:
+    # Save and display image
+    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
+    os.makedirs('upload', exist_ok=True)
+    with open(save_path, 'wb') as f:
+        f.write(image_data.getbuffer() if uploaded_file else captured_image.getvalue())
+
     st.image(image_data, use_column_width=True)
-    
+
     try:
-        result = classify_image_array(image_array)
+        result = classify_images(save_path)
         st.success(result)
     except Exception as e:
         st.error(f"Error in classification: {e}")
 
+    if st.button("Clear Image"):
+        uploaded_file = None
+        st.experimental_rerun()
 else:
-    # Display an error message if no image is provided
-    st.error("Please upload an image or capture one using the camera.")
+    st.warning("Please upload or capture an image.")
