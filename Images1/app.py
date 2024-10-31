@@ -114,13 +114,17 @@ else:
 # Check if either an uploaded file or captured image is provided
 if uploaded_file or captured_image:
     # Choose the captured image or uploaded file if available
-    image_data = uploaded_file if uploaded_file else captured_image
+    if uploaded_file:
+        image_data = uploaded_file
+        save_path = os.path.join('upload', uploaded_file.name)
+    else:
+        image_data = captured_image
+        save_path = os.path.join('upload', 'captured_image.png')
 
-    # Save and display image
-    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
+    # Save and display the image
     os.makedirs('upload', exist_ok=True)
     with open(save_path, 'wb') as f:
-        f.write(image_data.getbuffer() if uploaded_file else captured_image.getvalue())
+        f.write(image_data.getbuffer())
 
     st.image(image_data, use_column_width=True)
 
