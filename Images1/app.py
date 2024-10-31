@@ -50,6 +50,7 @@ download_model()
 # **LOAD THE MODEL** - Load the model globally
 try:
     model = load_model(model_filename)  # Load the model from the saved file
+    st.success("Model loaded successfully.")
 except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
@@ -59,32 +60,42 @@ def classify_images(image_path, confidence_threshold=0.7):  # Increase threshold
     if model is None:
         return "Model is not loaded properly."
 
-    input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
-    input_image_array = tf.keras.utils.img_to_array(input_image)
-    input_image_exp_dim = tf.expand_dims(input_image_array, 0)
+    # Load and preprocess image
+    try:
+        input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
+        input_image_array = tf.keras.utils.img_to_array(input_image)
+        input_image_exp_dim = tf.expand_dims(input_image_array, 0)
+    except Exception as e:
+        st.error(f"Error loading image: {e}")
+        return None
 
-    predictions = model.predict(input_image_exp_dim)
-    result = tf.nn.softmax(predictions[0])
-    predicted_class_index = np.argmax(result)
-    predicted_confidence = result[predicted_class_index]
-    
-    # Debugging logs
-    print("Predicted class index:", predicted_class_index)
-    print("Predicted confidence:", predicted_confidence)
-    
-    # Check confidence level
-    if predicted_confidence < confidence_threshold:
-        return "Error: The image doesn't match any known product with high confidence."
+    # Predict using the model
+    try:
+        predictions = model.predict(input_image_exp_dim)
+        result = tf.nn.softmax(predictions[0])
+        predicted_class_index = np.argmax(result)
+        predicted_confidence = result[predicted_class_index]
+        
+        # Displaying confidence in Streamlit for debugging
+        st.write(f"Predicted Confidence: {predicted_confidence}")
+        
+        if predicted_confidence < confidence_threshold:
+            return "Error: The image doesn't match any known product with high confidence."
 
-    if 0 <= predicted_class_index < len(product_names):
-        predicted_class = product_names[predicted_class_index]
-    else:
-        return "Error: Predicted class index out of range."
+        # Retrieve predicted class and corresponding buy link
+        if 0 <= predicted_class_index < len(product_names):
+            predicted_class = product_names[predicted_class_index]
+        else:
+            return "Error: Predicted class index out of range."
 
-    buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    send_whatsapp_message(image_path, predicted_class, buy_link)
+        buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
+        send_whatsapp_message(image_path, predicted_class, buy_link)
+        
+        return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
     
-    return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
+    except Exception as e:
+        st.error(f"Error in prediction: {e}")
+        return None
 
 # WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
@@ -121,7 +132,10 @@ if image_data is not None:
 
     try:
         result = classify_images(save_path)
-        st.success(result)
+        if result:
+            st.success(result)
+        else:
+            st.error("Error: The model could not classify the image.")
     except Exception as e:
         st.error(f"Error in classification: {e}")
 
