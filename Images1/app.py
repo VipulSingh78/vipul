@@ -47,7 +47,7 @@ def download_model():
 # Download the model
 download_model()
 
-# **LOAD THE MODEL** - Load the model globally
+# Load the model
 try:
     model = load_model(model_filename)  # Load the model from the saved file
 except Exception as e:
@@ -98,15 +98,24 @@ def send_whatsapp_message(image_path, predicted_class, buy_link):
     except Exception as e:
         print("Error sending WhatsApp message:", e)
 
-# Streamlit camera input and file uploader
+# Streamlit file uploader and camera capture button
 st.markdown("### Upload your image below or capture directly from camera:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
-captured_image = st.camera_input("Capture Image")
 
-# Choose the captured image or uploaded file if available
-image_data = uploaded_file if uploaded_file else captured_image
+# Button to show the camera input widget
+show_camera = st.button("Capture Image")
 
-if image_data is not None:
+# Display the camera input only if the button is clicked
+if show_camera:
+    captured_image = st.camera_input("Capture Image")
+else:
+    captured_image = None
+
+# Check if either an uploaded file or captured image is provided
+if uploaded_file or captured_image:
+    # Choose the captured image or uploaded file if available
+    image_data = uploaded_file if uploaded_file else captured_image
+
     # Save and display image
     save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
     os.makedirs('upload', exist_ok=True)
@@ -124,3 +133,6 @@ if image_data is not None:
     if st.button("Clear Image"):
         uploaded_file = None
         st.experimental_rerun()
+
+else:
+    st.warning("Please upload an image or capture one using the camera.")
