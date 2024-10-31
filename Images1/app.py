@@ -55,13 +55,11 @@ except Exception as e:
     model = None  # Ensure the model is None if loading fails
 
 # Image classification function with confidence threshold
-def classify_images(image_path, confidence_threshold=0.5):
+def classify_image_array(image_array, confidence_threshold=0.5):
     if model is None:
         return "Model is not loaded properly."
 
-    input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
-    input_image_array = tf.keras.utils.img_to_array(input_image)
-    input_image_exp_dim = tf.expand_dims(input_image_array, 0)
+    input_image_exp_dim = tf.expand_dims(image_array, 0)
 
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
@@ -78,20 +76,16 @@ def classify_images(image_path, confidence_threshold=0.5):
         return "Error: Predicted class index out of range."
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    send_whatsapp_message(image_path, predicted_class, buy_link)
+    send_whatsapp_message(predicted_class, buy_link)
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
 # WhatsApp message function
-def send_whatsapp_message(image_path, predicted_class, buy_link):
+def send_whatsapp_message(predicted_class, buy_link):
     try:
-        # Publicly hosted image URL (replace with actual hosted URL)
-        media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
-
         message = client.messages.create(
             from_='whatsapp:+14155238886',  # Twilio number
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=media_url,  # Public image URL
             to='whatsapp:+917800905998'
         )
         print("WhatsApp message sent successfully:", message.sid)
@@ -113,32 +107,28 @@ else:
 
 # Check if either an uploaded file or captured image is provided
 if uploaded_file or captured_image:
-    # Choose the captured image or uploaded file if available
+    # Process the uploaded image or captured image
     if uploaded_file:
         image_data = uploaded_file
-        save_path = os.path.join('upload', uploaded_file.name)
+        image_array = tf.keras.utils.img_to_array(tf.keras.utils.load_img(image_data, target_size=(224, 224)))
     else:
+        # Convert captured image data directly to an array
         image_data = captured_image
-        save_path = os.path.join('upload', 'captured_image.png')
+        image_array = tf.image.decode_image(image_data.read(), channels=3)
+        image_array = tf.image.resize(image_array, [224, 224])
 
-    # Save and display the image
-    os.makedirs('upload', exist_ok=True)
-    with open(save_path, 'wb') as f:
-        f.write(image_data.getbuffer())
-
+    # Display the image
     st.image(image_data, use_column_width=True)
-
-    # ** DEBUG: Display message to verify image save **
-    st.write("Image saved successfully. Attempting classification...")
-
+    
     try:
-        result = classify_images(save_path)
+        result = classify_image_array(image_array)
         st.success(result)
     except Exception as e:
         st.error(f"Error in classification: {e}")
 
     if st.button("Clear Image"):
         uploaded_file = None
+        captured_image = None
         st.experimental_rerun()
 
 else:
