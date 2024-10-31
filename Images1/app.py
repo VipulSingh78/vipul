@@ -124,6 +124,9 @@ if uploaded_file or captured_image:
 
     st.image(image_data, use_column_width=True)
 
+    # ** DEBUG: Display message to verify image save **
+    st.write("Image saved successfully. Attempting classification...")
+
     try:
         result = classify_images(save_path)
         st.success(result)
