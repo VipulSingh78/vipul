@@ -56,7 +56,7 @@ except Exception as e:
     model = None  # Ensure the model is None if loading fails
 
 # Image classification function with confidence threshold
-def classify_images(image_path, confidence_threshold=0.5):
+def classify_images(image_path, confidence_threshold=0.8):
     if model is None:
         return "Model is not loaded properly."
 
@@ -69,9 +69,9 @@ def classify_images(image_path, confidence_threshold=0.5):
     predicted_class_index = np.argmax(result)
     predicted_confidence = result[predicted_class_index]
     
-    # Check confidence level and show error if below threshold
+    # Agar confidence threshold se neeche hai, toh error dikhaye
     if predicted_confidence < confidence_threshold:
-        return f"Error: The image doesn't match any known product with high confidence. (Confidence: {predicted_confidence:.2f})"
+        return f"Error: Image is not recognized as a known product (Confidence: {predicted_confidence:.2f})"
 
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
