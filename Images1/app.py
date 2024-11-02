@@ -68,6 +68,8 @@ def classify_images(image_path, confidence_threshold=0.8):
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
     predicted_confidence = result[predicted_class_index]
+
+    st.write(f"Prediction Confidence: {predicted_confidence:.2f}")  # Debug message to check confidence score
     
     # Agar confidence threshold se neeche hai, toh error dikhaye
     if predicted_confidence < confidence_threshold:
