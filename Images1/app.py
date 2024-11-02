@@ -69,7 +69,7 @@ def classify_images(image_path, confidence_threshold=0.5):
     predicted_class_index = np.argmax(result)
     predicted_confidence = result[predicted_class_index]
     
-    # Check confidence level
+    # Check confidence level and show error if below threshold
     if predicted_confidence < confidence_threshold:
         return "Error: The image doesn't match any known product with high confidence."
 
@@ -121,7 +121,11 @@ if image_data is not None:
 
     try:
         result = classify_images(save_path)
-        st.success(result)
+        # If result contains "Error", show it as a warning
+        if "Error" in result:
+            st.warning(result)
+        else:
+            st.success(result)
     except Exception as e:
         st.error(f"Error in classification: {e}")
 
