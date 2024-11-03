@@ -35,28 +35,18 @@ os.makedirs('upload', exist_ok=True)
 
 # Function to download the model if it doesn't exist
 def download_model():
-    # Check if model exists and attempt to load it; if loading fails, delete and redownload
-    if os.path.exists(model_filename):
+    if not os.path.exists(model_filename):
         try:
-            test_model = load_model(model_filename)
-            st.success("Model loaded successfully.")
-            return  # Model is already downloaded and valid
+            with st.spinner('Downloading the model...'):
+                response = requests.get(model_url, stream=True)
+                response.raise_for_status()
+                with open(model_filename, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+            st.success('Model downloaded successfully.')
         except Exception as e:
-            st.warning("Corrupted model file detected. Re-downloading...")
-            os.remove(model_filename)  # Remove corrupted file
-    
-    # Download the model if it's not present or if it was corrupted
-    try:
-        with st.spinner('Downloading the model...'):
-            response = requests.get(model_url, stream=True)
-            response.raise_for_status()
-            with open(model_filename, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-        st.success('Model downloaded successfully.')
-    except Exception as e:
-        st.error(f"Error downloading the model: {e}")
+            st.error(f"Error downloading the model: {e}")
 
 # Download the model
 download_model()
@@ -97,7 +87,7 @@ def classify_images(image_path, confidence_threshold=0.8):
 
         # Check confidence level and show error if below threshold
         if predicted_confidence < confidence_threshold:
-            return f"Error: The image doesn't match any known product with high confidence. (Confidence: {predicted_confidence:.2f})"
+            return "Error: The image doesn't match any known product with high confidence."
 
         # Retrieve predicted class and corresponding buy link
         if 0 <= predicted_class_index < len(product_names):
@@ -120,7 +110,6 @@ def classify_images(image_path, confidence_threshold=0.8):
 def send_whatsapp_message(predicted_class, buy_link):
     try:
         # Publicly hosted image URL (replace with actual hosted URL)
-        # Ensure that the image is uploaded to a public URL accessible by Twilio
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
 
         message = client.messages.create(
@@ -170,8 +159,12 @@ elif captured_image is not None:
 # If an image is available, display and classify it
 if image_path:
     try:
+        # Display the image
         st.image(image_path, caption='Uploaded/Captured Image', use_column_width=True)
+
+        # Classify the image
         result = classify_images(image_path)
+
         if result:
             if "Error" in result:
                 st.warning(result)
@@ -182,6 +175,7 @@ if image_path:
 
     # Clear Image button
     if st.button("Clear Image"):
+        # Clear the uploaded and captured image variables
         uploaded_file = None
         captured_image = None
         image_path = None
