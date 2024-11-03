@@ -28,7 +28,7 @@ product_links = {
 }
 
 # Model URL and local filename
-model_url = 'Images1/Vipul_Recog_Model.h5'
+model_url = 'https://github.com/VipulSingh78/vipul/blob/e8e5d1ad01bfaa54cb69e9bbd840a5173f260166/Images1/Vipul_Recog_Model.h5'
 model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
 
 # Ensure the Models and upload directories exist
