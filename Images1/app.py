@@ -43,9 +43,6 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
-# Confidence threshold
-CONFIDENCE_THRESHOLD = 0.95  # Strict threshold for high-confidence match
-
 # Define actual class labels (replace these with your model's classes)
 class_labels = {
     0: "CCTV CAMERA", 
@@ -65,13 +62,13 @@ def classify_image(image_path):
     confidence = np.max(predictions)
     predicted_class = np.argmax(predictions)
     
-    # Only return if the prediction meets strict criteria
-    if confidence >= CONFIDENCE_THRESHOLD and predicted_class in class_labels:
+    # Return known class if available
+    if predicted_class in class_labels:
         class_name = class_labels[predicted_class]
         return class_name, confidence
     else:
-        # If prediction doesn't meet criteria, show error
-        return "Error", confidence
+        # Show error for unknown images
+        return "Unknown", confidence
 
 # Streamlit camera input and file uploader
 st.markdown("### Upload your image below or capture directly from camera:")
@@ -116,8 +113,8 @@ if image_path:
         # Classify the image
         class_name, confidence = classify_image(image_path)
 
-        if class_name == "Error":
-            st.error("The image doesn't match any known product with high confidence.")
+        if class_name == "Unknown":
+            st.error("This image doesn't match any known product.")
         else:
             st.success(f"The image belongs to {class_name}.")
             st.write(f"Predicted Confidence: {confidence:.2f}")
