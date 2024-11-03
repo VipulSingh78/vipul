@@ -44,7 +44,7 @@ except Exception as e:
     model = None  # Ensure the model is None if loading fails
 
 # Confidence threshold
-CONFIDENCE_THRESHOLD = 0.80
+CONFIDENCE_THRESHOLD = 0.90  # Increased threshold for stricter matching
 
 # Define actual class labels (replace these with your model's classes)
 class_labels = {
@@ -65,7 +65,7 @@ def classify_image(image_path):
     confidence = np.max(predictions)
     predicted_class = np.argmax(predictions)
     
-    # Check if the predicted class is in our known classes and has high confidence
+    # Strictly check if the predicted class is valid and meets high confidence threshold
     if confidence >= CONFIDENCE_THRESHOLD and predicted_class in class_labels:
         class_name = class_labels[predicted_class]
         return class_name, confidence
