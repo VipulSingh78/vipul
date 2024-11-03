@@ -50,8 +50,16 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
-# Set confidence threshold for prediction
+# Confidence threshold
 CONFIDENCE_THRESHOLD = 0.80
+
+# Define actual class labels (replace these with your model's classes)
+class_labels = {
+    0: "CCTV CAMERA", 
+    1: "Switch", 
+    2: "Fan", 
+    # Add more classes as needed
+}
 
 # Image classification function
 def classify_image(image_path):
@@ -64,11 +72,9 @@ def classify_image(image_path):
     confidence = np.max(predictions)
     predicted_class = np.argmax(predictions)
     
-    # Check confidence level
-    if confidence >= CONFIDENCE_THRESHOLD:
-        # Replace with actual class labels as per model's training data
-        class_labels = {0: "CCTV CAMERA", 1: "OtherClass1", 2: "OtherClass2"}  # Replace with actual labels
-        class_name = class_labels.get(predicted_class, "Unknown")
+    # Check if predicted class exists in `class_labels` and meets confidence threshold
+    if confidence >= CONFIDENCE_THRESHOLD and predicted_class in class_labels:
+        class_name = class_labels[predicted_class]
         return class_name, confidence
     else:
         return "Error", confidence
