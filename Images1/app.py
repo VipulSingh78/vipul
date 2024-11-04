@@ -15,7 +15,7 @@ client = Client(account_sid, auth_token)
 st.title('Welcome to Apna Electrician')
 st.subheader('Upload or capture an image of a product, and get recommendations!')
 
-# Product names and links (ensure that these names align with the model's classes)
+# Product names and links
 product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
 product_links = {
     'Anchor Switch': 'https://www.apnaelectrician.com/anchor-switches',
@@ -54,8 +54,8 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None
 
-# Image classification function with confidence threshold
-def classify_images(image_path, confidence_threshold=0.5):
+# Image classification function with strict error handling for unknowns
+def classify_images(image_path, confidence_threshold=0.8):
     if model is None:
         return "Model is not loaded properly."
 
@@ -68,11 +68,16 @@ def classify_images(image_path, confidence_threshold=0.5):
     predicted_class_index = np.argmax(result)
     predicted_confidence = result[predicted_class_index]
 
-    # Check if predicted class matches known products and meets confidence threshold
-    if predicted_confidence < confidence_threshold or predicted_class_index >= len(product_names):
+    # Check if the confidence level is too low or does not meet the threshold
+    if predicted_confidence < confidence_threshold:
         return "Error: The image doesn't match any known product with high confidence."
 
-    predicted_class = product_names[predicted_class_index]
+    # Check if the predicted class is within known categories
+    if 0 <= predicted_class_index < len(product_names):
+        predicted_class = product_names[predicted_class_index]
+    else:
+        return "Error: Predicted class index out of range."
+
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
     send_whatsapp_message(image_path, predicted_class, buy_link)
 
