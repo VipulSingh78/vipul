@@ -3,6 +3,7 @@ import numpy as np
 import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
 from twilio.rest import Client
 import requests
 
@@ -28,7 +29,6 @@ product_links = {
 # Model URL and local filename
 model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
 model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
-
 os.makedirs('Models', exist_ok=True)
 
 # Function to download model if it doesn't exist
@@ -54,21 +54,23 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
-# Image classification function with higher confidence threshold
-def classify_images(image_path, confidence_threshold=0.8):  # Increased threshold
+# Image classification function with confidence threshold
+def classify_images(image_path, confidence_threshold=0.8):
     if model is None:
         return "Model is not loaded properly."
 
-    input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
-    input_image_array = tf.keras.utils.img_to_array(input_image)
-    input_image_exp_dim = tf.expand_dims(input_image_array, 0)
+    # Preprocess the image for the model
+    input_image = image.load_img(image_path, target_size=(224, 224))
+    input_image_array = image.img_to_array(input_image)
+    input_image_exp_dim = np.expand_dims(input_image_array, axis=0)
+    input_image_exp_dim /= 255.0  # Normalize image
 
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
     predicted_confidence = result[predicted_class_index]
     
-    # Check confidence level with higher threshold
+    # Check confidence level
     if predicted_confidence < confidence_threshold:
         return "Error: The image doesn't match any known product with high confidence."
 
