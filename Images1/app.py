@@ -47,15 +47,15 @@ def download_model():
 # Download the model
 download_model()
 
-# Load the model
+# **LOAD THE MODEL** - Load the model globally
 try:
-    model = load_model(model_filename)
+    model = load_model(model_filename)  # Load the model from the saved file
 except Exception as e:
     st.error(f"Error loading model: {e}")
-    model = None
+    model = None  # Ensure the model is None if loading fails
 
-# Image classification function with strict error handling for unknowns
-def classify_images(image_path, confidence_threshold=0.8):
+# Image classification function with higher confidence threshold
+def classify_images(image_path, confidence_threshold=0.8):  # Increased threshold
     if model is None:
         return "Model is not loaded properly."
 
@@ -67,12 +67,11 @@ def classify_images(image_path, confidence_threshold=0.8):
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
     predicted_confidence = result[predicted_class_index]
-
-    # Check if the confidence level is too low or does not meet the threshold
+    
+    # Check confidence level with higher threshold
     if predicted_confidence < confidence_threshold:
         return "Error: The image doesn't match any known product with high confidence."
 
-    # Check if the predicted class is within known categories
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
     else:
@@ -80,17 +79,19 @@ def classify_images(image_path, confidence_threshold=0.8):
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
     send_whatsapp_message(image_path, predicted_class, buy_link)
-
+    
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
 # WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
+        # Publicly hosted image URL (replace with actual hosted URL)
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
+
         message = client.messages.create(
-            from_='whatsapp:+14155238886',
+            from_='whatsapp:+14155238886',  # Twilio number
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=media_url,
+            media_url=media_url,  # Public image URL
             to='whatsapp:+917800905998'
         )
         print("WhatsApp message sent successfully:", message.sid)
@@ -106,6 +107,7 @@ captured_image = st.camera_input("Capture Image")
 image_data = uploaded_file if uploaded_file else captured_image
 
 if image_data is not None:
+    # Save and display image
     save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
     os.makedirs('upload', exist_ok=True)
     with open(save_path, 'wb') as f:
