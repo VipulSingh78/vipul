@@ -15,7 +15,7 @@ client = Client(account_sid, auth_token)
 st.title('Welcome to Apna Electrician')
 st.subheader('Upload or capture an image of a product, and get recommendations!')
 
-# Product names and links
+# Product names and links (ensure that these names align with the model's classes)
 product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
 product_links = {
     'Anchor Switch': 'https://www.apnaelectrician.com/anchor-switches',
@@ -47,12 +47,12 @@ def download_model():
 # Download the model
 download_model()
 
-# **LOAD THE MODEL** - Load the model globally
+# Load the model
 try:
-    model = load_model(model_filename)  # Load the model from the saved file
+    model = load_model(model_filename)
 except Exception as e:
     st.error(f"Error loading model: {e}")
-    model = None  # Ensure the model is None if loading fails
+    model = None
 
 # Image classification function with confidence threshold
 def classify_images(image_path, confidence_threshold=0.5):
@@ -67,31 +67,25 @@ def classify_images(image_path, confidence_threshold=0.5):
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
     predicted_confidence = result[predicted_class_index]
-    
-    # Check confidence level
-    if predicted_confidence < confidence_threshold:
+
+    # Check if predicted class matches known products and meets confidence threshold
+    if predicted_confidence < confidence_threshold or predicted_class_index >= len(product_names):
         return "Error: The image doesn't match any known product with high confidence."
 
-    if 0 <= predicted_class_index < len(product_names):
-        predicted_class = product_names[predicted_class_index]
-    else:
-        return "Error: Predicted class index out of range."
-
+    predicted_class = product_names[predicted_class_index]
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
     send_whatsapp_message(image_path, predicted_class, buy_link)
-    
+
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
 # WhatsApp message function
 def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
-        # Publicly hosted image URL (replace with actual hosted URL)
         media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
-
         message = client.messages.create(
-            from_='whatsapp:+14155238886',  # Twilio number
+            from_='whatsapp:+14155238886',
             body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=media_url,  # Public image URL
+            media_url=media_url,
             to='whatsapp:+917800905998'
         )
         print("WhatsApp message sent successfully:", message.sid)
@@ -107,7 +101,6 @@ captured_image = st.camera_input("Capture Image")
 image_data = uploaded_file if uploaded_file else captured_image
 
 if image_data is not None:
-    # Save and display image
     save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
     os.makedirs('upload', exist_ok=True)
     with open(save_path, 'wb') as f:
