@@ -37,7 +37,7 @@ except Exception as e:
     model = None  # Model is None if loading fails
 
 # Product names for validation
-product_names = ['Anchor Switch', 'FAN', 'Switch', 'TV']
+product_names = ['Anchor Switch','CCTV CAMERA', 'FAN', 'Switch', 'TV']
 
 # Simplified classification function
 def classify_image(image_path):
