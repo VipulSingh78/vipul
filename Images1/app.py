@@ -5,12 +5,11 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from twilio.rest import Client
 import requests
-from telegram import Bot
 
-# Telegram Bot Token
-bot_token = '7608756128:AAEdO8F9kc1W6NDhf6LLXZeZ4USS-rOivok'
-chat_id = '<your_chat_id>'  # Replace with your actual Telegram chat ID
-bot = telegram.Bot(token=bot_token)
+# Twilio credentials (use secure environment variables in production)
+account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
+auth_token = '40d3d53464a816fb6de7855a640c4194'
+client = Client(account_sid, auth_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
