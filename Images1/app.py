@@ -3,13 +3,15 @@ import numpy as np
 import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from twilio.rest import Client
 import requests
+import telegram
 
-# Twilio credentials (use secure environment variables in production)
-account_sid = 'AC093d4d6255428d338c2f3edc10328cf7'
-auth_token = '40d3d53464a816fb6de7855a640c4194'
-client = Client(account_sid, auth_token)
+# Telegram bot token
+bot_token = '7583608279:AAHzF_LbbExe1lHN-nMzk2sMBp8lh1hnKqQ'
+chat_id = '5798688974'  # Replace with your chat ID
+
+# Initialize the Telegram bot
+bot = telegram.Bot(token=bot_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
@@ -47,12 +49,12 @@ def download_model():
 # Download the model
 download_model()
 
-# **LOAD THE MODEL** - Load the model globally
+# Load the model
 try:
-    model = load_model(model_filename)  # Load the model from the saved file
+    model = load_model(model_filename)
 except Exception as e:
     st.error(f"Error loading model: {e}")
-    model = None  # Ensure the model is None if loading fails
+    model = None
 
 # Image classification function with confidence threshold
 def classify_images(image_path, confidence_threshold=0.5):
@@ -78,25 +80,26 @@ def classify_images(image_path, confidence_threshold=0.5):
         return "Error: Predicted class index out of range."
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    send_whatsapp_message(image_path, predicted_class, buy_link)
+    send_telegram_message(image_path, predicted_class, buy_link)
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
-# WhatsApp message function
-def send_whatsapp_message(image_path, predicted_class, buy_link):
+# Telegram message function
+def send_telegram_message(image_path, predicted_class, buy_link):
     try:
-        # Publicly hosted image URL (replace with actual hosted URL)
-        media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
-
-        message = client.messages.create(
-            from_='whatsapp:+14155238886',  # Twilio number
-            body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            media_url=media_url,  # Public image URL
-            to='whatsapp:+917800905998'
+        # Send classification result and buy link to Telegram
+        bot.send_message(
+            chat_id=chat_id,
+            text=f"Classification Result: {predicted_class}. Buy here: {buy_link}"
         )
-        print("WhatsApp message sent successfully:", message.sid)
+        
+        # Send image to Telegram
+        with open(image_path, 'rb') as image_file:
+            bot.send_photo(chat_id=chat_id, photo=image_file)
+        
+        print("Telegram message sent successfully.")
     except Exception as e:
-        print("Error sending WhatsApp message:", e)
+        print("Error sending Telegram message:", e)
 
 # Streamlit camera input and file uploader
 st.markdown("### Upload your image below or capture directly from camera:")
