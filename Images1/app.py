@@ -4,7 +4,8 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 import requests
-import telegram
+from import telegram Bot
+
 
 # Telegram bot token
 bot_token = '7583608279:AAHzF_LbbExe1lHN-nMzk2sMBp8lh1hnKqQ'
