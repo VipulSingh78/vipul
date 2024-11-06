@@ -4,17 +4,34 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 import requests
+import telegram  # Add the `python-telegram-bot` package for this
+
+# Telegram Bot Token
+bot_token = '7608756128:AAEdO8F9kc1W6NDhf6LLXZeZ4USS-rOivok'
+chat_id = '<5798688974>'  # Replace with your actual Telegram chat ID
+bot = telegram.Bot(token=bot_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
-st.subheader('Upload or capture an image of a product to test model classification.')
+st.subheader('Upload an image of a product, and get recommendations!')
+
+# Product names and links
+product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
+product_links = {
+    'Anchor Switch': 'https://www.apnaelectrician.com/anchor-switches',
+    'CCTV CAMERA': 'https://www.apnaelectrician.com/cctv-cameras',
+    'FAN': 'https://www.apnaelectrician.com/fans',
+    'Switch': 'https://www.apnaelectrician.com/switches',
+    'TV': 'https://www.apnaelectrician.com/tvs'
+}
 
 # Model URL and local filename
 model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
 model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
+
 os.makedirs('Models', exist_ok=True)
 
-# Download model if it doesn't exist
+# Function to download model if it doesn't exist
 def download_model():
     if not os.path.exists(model_filename):
         try:
@@ -22,72 +39,75 @@ def download_model():
                 r.raise_for_status()
                 with open(model_filename, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
+                        if chunk:
+                            f.write(chunk)
         except Exception as e:
             st.error(f"Error downloading the model: {e}")
 
+# Download the model
 download_model()
 
-# Load model with error handling
+# **LOAD THE MODEL** - Load the model globally
 try:
-    model = load_model(model_filename)
-    st.success("Model loaded successfully.")
+    model = load_model(model_filename)  # Load the model from the saved file
 except Exception as e:
     st.error(f"Error loading model: {e}")
-    model = None  # Model is None if loading fails
+    model = None  # Ensure the model is None if loading fails
 
-# Product names for validation
-product_names = ['Anchor Switch','CCTV CAMERA', 'FAN', 'Switch', 'TV']
-
-# Simplified classification function
-def classify_image(image_path):
+# Image classification function
+def classify_images(image_path):
     if model is None:
-        return "Model failed to load."
+        return "Model is not loaded properly."
 
-    # Image preprocessing
     input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
     input_image_array = tf.keras.utils.img_to_array(input_image)
     input_image_exp_dim = tf.expand_dims(input_image_array, 0)
 
-    # Predict using the model
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
-
-    # Check confidence level and print class only if confident
-    if result[predicted_class_index] < 0.5:
-        return "Error: Image doesn't match known products with high confidence."
     
     if 0 <= predicted_class_index < len(product_names):
-        return f"The image matches: {product_names[predicted_class_index]}"
+        predicted_class = product_names[predicted_class_index]
     else:
-        return "Error: Prediction out of range."
+        return "Error: Predicted class index out of range."
 
-# Streamlit file uploader and camera input
-st.markdown("### Upload or capture an image to classify:")
+    buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
+    send_telegram_message(image_path, predicted_class, buy_link)
+    
+    return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
+
+# Telegram message function
+def send_telegram_message(image_path, predicted_class, buy_link):
+    try:
+        with open(image_path, 'rb') as img:
+            bot.send_photo(
+                chat_id=chat_id,
+                photo=img,
+                caption=f"Classification Result: {predicted_class}. Buy here: {buy_link}"
+            )
+        print("Telegram message sent successfully.")
+    except Exception as e:
+        print("Error sending Telegram message:", e)
+
+# Streamlit file uploader
+st.markdown("### Upload your image below:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
-captured_image = st.camera_input("Capture Image")
 
-# Choose captured image or uploaded file
-image_data = uploaded_file if uploaded_file else captured_image
-
-if image_data is not None:
-    # Save and display image
-    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
+if uploaded_file is not None:
+    save_path = os.path.join('upload', uploaded_file.name)
     os.makedirs('upload', exist_ok=True)
     with open(save_path, 'wb') as f:
-        f.write(image_data.getbuffer() if uploaded_file else captured_image.getvalue())
+        f.write(uploaded_file.getbuffer())
 
-    st.image(image_data, use_column_width=True)
+    st.image(uploaded_file, use_column_width=True)
 
-    # Run classification
     try:
-        result = classify_image(save_path)
+        result = classify_images(save_path)
         st.success(result)
     except Exception as e:
-        st.error(f"Classification error: {e}")
+        st.error(f"Error in classification: {e}")
 
-    # Clear image
     if st.button("Clear Image"):
         uploaded_file = None
         st.experimental_rerun()
