@@ -3,17 +3,18 @@ import numpy as np
 import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
+from twilio.rest import Client
 import requests
-import telegram  # Add the `python-telegram-bot` package for this
+import telegram 
 
 # Telegram Bot Token
 bot_token = '7608756128:AAEdO8F9kc1W6NDhf6LLXZeZ4USS-rOivok'
-chat_id = '<5798688974>'  # Replace with your actual Telegram chat ID
+chat_id = '<your_chat_id>'  # Replace with your actual Telegram chat ID
 bot = telegram.Bot(token=bot_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
-st.subheader('Upload an image of a product, and get recommendations!')
+st.subheader('Upload or capture an image of a product, and get recommendations!')
 
 # Product names and links
 product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
@@ -54,8 +55,8 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None  # Ensure the model is None if loading fails
 
-# Image classification function
-def classify_images(image_path):
+# Image classification function with confidence threshold
+def classify_images(image_path, confidence_threshold=0.5):
     if model is None:
         return "Model is not loaded properly."
 
@@ -66,41 +67,54 @@ def classify_images(image_path):
     predictions = model.predict(input_image_exp_dim)
     result = tf.nn.softmax(predictions[0])
     predicted_class_index = np.argmax(result)
+    predicted_confidence = result[predicted_class_index]
     
+    # Check confidence level
+    if predicted_confidence < confidence_threshold:
+        return "Error: The image doesn't match any known product with high confidence."
+
     if 0 <= predicted_class_index < len(product_names):
         predicted_class = product_names[predicted_class_index]
     else:
         return "Error: Predicted class index out of range."
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    send_telegram_message(image_path, predicted_class, buy_link)
+    send_whatsapp_message(image_path, predicted_class, buy_link)
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
-# Telegram message function
-def send_telegram_message(image_path, predicted_class, buy_link):
+# WhatsApp message function
+def send_whatsapp_message(image_path, predicted_class, buy_link):
     try:
-        with open(image_path, 'rb') as img:
-            bot.send_photo(
-                chat_id=chat_id,
-                photo=img,
-                caption=f"Classification Result: {predicted_class}. Buy here: {buy_link}"
-            )
-        print("Telegram message sent successfully.")
+        # Publicly hosted image URL (replace with actual hosted URL)
+        media_url = [f'https://your-public-image-url.com/{os.path.basename(image_path)}']
+
+        message = client.messages.create(
+            from_='whatsapp:+14155238886',  # Twilio number
+            body=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
+            media_url=media_url,  # Public image URL
+            to='whatsapp:+917800905998'
+        )
+        print("WhatsApp message sent successfully:", message.sid)
     except Exception as e:
-        print("Error sending Telegram message:", e)
+        print("Error sending WhatsApp message:", e)
 
-# Streamlit file uploader
-st.markdown("### Upload your image below:")
+# Streamlit camera input and file uploader
+st.markdown("### Upload your image below or capture directly from camera:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
+captured_image = st.camera_input("Capture Image")
 
-if uploaded_file is not None:
-    save_path = os.path.join('upload', uploaded_file.name)
+# Choose the captured image or uploaded file if available
+image_data = uploaded_file if uploaded_file else captured_image
+
+if image_data is not None:
+    # Save and display image
+    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
     os.makedirs('upload', exist_ok=True)
     with open(save_path, 'wb') as f:
-        f.write(uploaded_file.getbuffer())
+        f.write(image_data.getbuffer() if uploaded_file else captured_image.getvalue())
 
-    st.image(uploaded_file, use_column_width=True)
+    st.image(image_data, use_column_width=True)
 
     try:
         result = classify_images(save_path)
