@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from twilio.rest import Client
 import requests
-import telegram 
+from telegram import Bot
 
 # Telegram Bot Token
 bot_token = '7608756128:AAEdO8F9kc1W6NDhf6LLXZeZ4USS-rOivok'
