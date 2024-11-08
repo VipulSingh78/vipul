@@ -5,8 +5,7 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 import requests
 import asyncio
-from telegram import Bot, InputFile
-from telegram.constants import ParseMode
+from telegram import Bot
 from telegram.error import TelegramError
 
 # Telegram bot token and chat ID
@@ -94,12 +93,12 @@ async def send_telegram_message(image_path, predicted_class, buy_link):
         await bot.send_message(
             chat_id=chat_id,
             text=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode='Markdown'
         )
         
         # Send image to Telegram
         with open(image_path, 'rb') as image_file:
-            await bot.send_photo(chat_id=chat_id, photo=InputFile(image_file))
+            await bot.send_photo(chat_id=chat_id, photo=image_file)
         
         print("Telegram message sent successfully.")
     except TelegramError as e:
