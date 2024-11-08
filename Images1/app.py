@@ -12,7 +12,11 @@ bot_token = 'YOUR_TELEGRAM_BOT_TOKEN'
 chat_id = 'YOUR_CHAT_ID'
 
 # Initialize the Telegram bot
-bot = Bot(token=bot_token)
+try:
+    bot = Bot(token=bot_token)
+    st.write("Telegram Bot initialized successfully!")
+except Exception as e:
+    st.error(f"Error initializing Telegram Bot: {e}")
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
@@ -53,6 +57,7 @@ download_model()
 # Load the model
 try:
     model = load_model(model_filename)
+    st.write("Model loaded successfully!")
 except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None
@@ -99,9 +104,9 @@ def send_telegram_message(image_path, predicted_class, buy_link):
         with open(image_path, 'rb') as image_file:
             bot.send_photo(chat_id=chat_id, photo=image_file)
         
-        print("Telegram message sent successfully.")
+        st.write("Telegram message sent successfully.")
     except TelegramError as e:
-        print("Error sending Telegram message:", e)
+        st.error(f"Error sending Telegram message: {e}")
 
 # Streamlit camera input and file uploader
 st.markdown("### Upload your image below or capture directly from camera:")
@@ -130,3 +135,10 @@ if image_data is not None:
     if st.button("Clear Image"):
         uploaded_file = None
         st.experimental_rerun()
+
+# Debugging imports
+try:
+    from telegram import Bot, InputFile
+    st.write("telegram module imported successfully!")
+except ImportError as e:
+    st.error(f"Error importing telegram module: {e}")
