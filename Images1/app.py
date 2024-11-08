@@ -8,8 +8,8 @@ from telegram import Bot
 from telegram.error import TelegramError
 
 # Telegram bot token and chat ID
-bot_token = 'YOUR_TELEGRAM_BOT_TOKEN'  # Replace with your actual bot token
-chat_id = 'YOUR_CHAT_ID'  # Replace with your chat ID
+bot_token = '7583608279:AAHzF_LbbExe1lHN-nMzk2sMBp8lh1hnKqQ'  # Replace with your actual bot token
+chat_id = '5798688974'  # Replace with your chat ID
 
 # Initialize the Telegram bot
 bot = Bot(token=bot_token)
