@@ -4,32 +4,15 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 import requests
-from telegram import Bot, Update
-from telegram.ext import Application, CommandHandler
+from telegram import Bot
+import asyncio
 
-# Telegram bot token and chat ID
-bot_token = '7583608279:AAHzF_LbbExe1lHN-nMzk2sMBp8lh1hnKqQ'
-chat_id = '5798688974'  # Replace with your chat ID
+# Telegram bot token
+bot_token = 'YOUR_TELEGRAM_BOT_TOKEN'
+chat_id = 'YOUR_CHAT_ID'
 
-# Initialize the Telegram bot application
-application = Application.builder().token(bot_token).build()
-
-# Define a function to send messages
-async def send_telegram_message(image_path, predicted_class, buy_link):
-    try:
-        # Send classification result and buy link to Telegram
-        await application.bot.send_message(
-            chat_id=chat_id,
-            text=f"Classification Result: {predicted_class}. Buy here: {buy_link}"
-        )
-        
-        # Send image to Telegram
-        with open(image_path, 'rb') as image_file:
-            await application.bot.send_photo(chat_id=chat_id, photo=image_file)
-        
-        print("Telegram message sent successfully.")
-    except Exception as e:
-        print("Error sending Telegram message:", e)
+# Initialize the Telegram bot
+bot = Bot(token=bot_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
@@ -74,8 +57,8 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     model = None
 
-# Image classification function with confidence threshold
-def classify_images(image_path, confidence_threshold=0.5):
+# Async image classification function with confidence threshold
+async def classify_images(image_path, confidence_threshold=0.5):
     if model is None:
         return "Model is not loaded properly."
 
@@ -102,6 +85,23 @@ def classify_images(image_path, confidence_threshold=0.5):
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
+# Async function to send Telegram message with classification and image
+async def send_telegram_message(image_path, predicted_class, buy_link):
+    try:
+        # Send classification result and buy link to Telegram
+        await bot.send_message(
+            chat_id=chat_id,
+            text=f"Classification Result: {predicted_class}. Buy here: {buy_link}"
+        )
+        
+        # Send image to Telegram
+        with open(image_path, 'rb') as image_file:
+            await bot.send_photo(chat_id=chat_id, photo=image_file)
+        
+        print("Telegram message sent successfully.")
+    except Exception as e:
+        print("Error sending Telegram message:", e)
+
 # Streamlit camera input and file uploader
 st.markdown("### Upload your image below or capture directly from camera:")
 uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
@@ -120,7 +120,8 @@ if image_data is not None:
     st.image(image_data, use_column_width=True)
 
     try:
-        result = classify_images(save_path)
+        # Run the classify_images function asynchronously
+        result = asyncio.run(classify_images(save_path))
         st.success(result)
     except Exception as e:
         st.error(f"Error in classification: {e}")
