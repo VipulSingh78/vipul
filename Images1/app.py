@@ -9,8 +9,8 @@ from telegram import Bot
 from telegram.error import TelegramError
 
 # Telegram bot token and chat ID
-bot_token = 'YOUR_TELEGRAM_BOT_TOKEN'
-chat_id = 'YOUR_CHAT_ID'
+bot_token = '7583608279:AAHzF_LbbExe1lHN-nMzk2sMBp8lh1hnKqQ'
+chat_id = '5798688974'
 
 # Initialize the Telegram bot
 bot = Bot(token=bot_token)
