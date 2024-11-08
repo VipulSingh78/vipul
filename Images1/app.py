@@ -4,10 +4,12 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 import requests
-from telegram import Bot
 import asyncio
+from telegram import Bot, InputFile
+from telegram.constants import ParseMode
+from telegram.error import TelegramError
 
-# Telegram bot token
+# Telegram bot token and chat ID
 bot_token = 'YOUR_TELEGRAM_BOT_TOKEN'
 chat_id = 'YOUR_CHAT_ID'
 
@@ -91,15 +93,16 @@ async def send_telegram_message(image_path, predicted_class, buy_link):
         # Send classification result and buy link to Telegram
         await bot.send_message(
             chat_id=chat_id,
-            text=f"Classification Result: {predicted_class}. Buy here: {buy_link}"
+            text=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
+            parse_mode=ParseMode.MARKDOWN
         )
         
         # Send image to Telegram
         with open(image_path, 'rb') as image_file:
-            await bot.send_photo(chat_id=chat_id, photo=image_file)
+            await bot.send_photo(chat_id=chat_id, photo=InputFile(image_file))
         
         print("Telegram message sent successfully.")
-    except Exception as e:
+    except TelegramError as e:
         print("Error sending Telegram message:", e)
 
 # Streamlit camera input and file uploader
