@@ -4,14 +4,32 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 import requests
-from telegram import Bot
+from telegram import Bot, Update
+from telegram.ext import Application, CommandHandler
 
 # Telegram bot token and chat ID
 bot_token = '7583608279:AAHzF_LbbExe1lHN-nMzk2sMBp8lh1hnKqQ'
 chat_id = '5798688974'  # Replace with your chat ID
 
-# Initialize the Telegram bot
-bot = Bot(token=bot_token)
+# Initialize the Telegram bot application
+application = Application.builder().token(bot_token).build()
+
+# Define a function to send messages
+async def send_telegram_message(image_path, predicted_class, buy_link):
+    try:
+        # Send classification result and buy link to Telegram
+        await application.bot.send_message(
+            chat_id=chat_id,
+            text=f"Classification Result: {predicted_class}. Buy here: {buy_link}"
+        )
+        
+        # Send image to Telegram
+        with open(image_path, 'rb') as image_file:
+            await application.bot.send_photo(chat_id=chat_id, photo=image_file)
+        
+        print("Telegram message sent successfully.")
+    except Exception as e:
+        print("Error sending Telegram message:", e)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
@@ -80,26 +98,9 @@ def classify_images(image_path, confidence_threshold=0.5):
         return "Error: Predicted class index out of range."
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    send_telegram_message(image_path, predicted_class, buy_link)
+    await send_telegram_message(image_path, predicted_class, buy_link)
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
-
-# Telegram message function
-def send_telegram_message(image_path, predicted_class, buy_link):
-    try:
-        # Send classification result and buy link to Telegram
-        bot.send_message(
-            chat_id=chat_id,
-            text=f"Classification Result: {predicted_class}. Buy here: {buy_link}"
-        )
-        
-        # Send image to Telegram
-        with open(image_path, 'rb') as image_file:
-            bot.send_photo(chat_id=chat_id, photo=image_file)
-        
-        print("Telegram message sent successfully.")
-    except Exception as e:
-        print("Error sending Telegram message:", e)
 
 # Streamlit camera input and file uploader
 st.markdown("### Upload your image below or capture directly from camera:")
