@@ -5,15 +5,14 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 import requests
 from telegram import Bot
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from telegram.error import TelegramError
 
 # Telegram bot token and chat ID
-bot_token = '7583608279:AAHzF_LbbExe1lHN-nMzk2sMBp8lh1hnKqQ'
-chat_id = '5798688974'
+bot_token = 'YOUR_TELEGRAM_BOT_TOKEN'  # Replace with your actual bot token
+chat_id = 'YOUR_CHAT_ID'  # Replace with your chat ID
 
-# Initialize the Telegram bot with Application class
-application = Application.builder().token(bot_token).build()
+# Initialize the Telegram bot
+bot = Bot(token=bot_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
@@ -82,6 +81,8 @@ def classify_images(image_path, confidence_threshold=0.5):
         return "Error: Predicted class index out of range."
 
     buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
+    
+    # Send the image and classification to Telegram
     send_telegram_message(image_path, predicted_class, buy_link)
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
@@ -90,7 +91,7 @@ def classify_images(image_path, confidence_threshold=0.5):
 def send_telegram_message(image_path, predicted_class, buy_link):
     try:
         # Send classification result and buy link to Telegram
-        application.bot.send_message(
+        bot.send_message(
             chat_id=chat_id,
             text=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
             parse_mode='Markdown'
@@ -98,7 +99,7 @@ def send_telegram_message(image_path, predicted_class, buy_link):
         
         # Send image to Telegram
         with open(image_path, 'rb') as image_file:
-            application.bot.send_photo(chat_id=chat_id, photo=image_file)
+            bot.send_photo(chat_id=chat_id, photo=image_file)
         
         print("Telegram message sent successfully.")
     except TelegramError as e:
