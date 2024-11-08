@@ -6,13 +6,12 @@ from tensorflow.keras.models import load_model
 import requests
 from telegram import Bot
 
-
-# Telegram bot token
+# Telegram bot token and chat ID
 bot_token = '7583608279:AAHzF_LbbExe1lHN-nMzk2sMBp8lh1hnKqQ'
 chat_id = '5798688974'  # Replace with your chat ID
 
 # Initialize the Telegram bot
-bot = telegram.Bot(token=bot_token)
+bot = Bot(token=bot_token)
 
 # Streamlit app title
 st.title('Welcome to Apna Electrician')
@@ -85,7 +84,7 @@ def classify_images(image_path, confidence_threshold=0.5):
     
     return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
 
-# Telegram message function
+# Telegram message function to send both image and classification details
 def send_telegram_message(image_path, predicted_class, buy_link):
     try:
         # Send classification result and buy link to Telegram
@@ -118,6 +117,10 @@ if image_data is not None:
         f.write(image_data.getbuffer() if uploaded_file else captured_image.getvalue())
 
     st.image(image_data, use_column_width=True)
+
+    # Send the uploaded image to Telegram for cross-checking before classification
+    with open(save_path, 'rb') as img_file:
+        bot.send_photo(chat_id=chat_id, photo=img_file, caption="User-uploaded image for cross-checking")
 
     try:
         result = classify_images(save_path)
