@@ -8,8 +8,8 @@ from telegram import Bot
 from telegram.error import TelegramError
 
 # Telegram bot token and chat ID
-bot_token = '7583608279:AAHzF_LbbExe1lHN-nMzk2sMBp8lh1hnKqQ'  # Replace with your actual bot token
-chat_id = '5798688974'  # Replace with your chat ID
+bot_token = '7694193590:AAG_QI7z90BFV5p-3lBgPY3yrpR__GFuTv0'  # Updated bot token
+chat_id = '5798688974'  # Updated chat ID
 
 # Initialize the Telegram bot
 bot = Bot(token=bot_token)
@@ -32,6 +32,7 @@ product_links = {
 model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
 model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
 
+# Ensure model directory exists
 os.makedirs('Models', exist_ok=True)
 
 # Function to download model if it doesn't exist
