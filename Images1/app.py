@@ -8,8 +8,8 @@ from telegram import Bot
 from telegram.error import TelegramError
 
 # Telegram bot token and chat ID
-bot_token = '7694193590:AAG_QI7z90BFV5p-3lBgPY3yrpR__GFuTv0'  # Updated bot token
-chat_id = '5798688974'  # Updated chat ID
+bot_token = '7694193590:AAG_QI7z90BFV5p-3lBgPY3yrpR__GFuTv0'  # Replace with your actual bot token
+chat_id = '5798688974'  # Replace with your chat ID
 
 # Initialize the Telegram bot
 bot = Bot(token=bot_token)
@@ -32,7 +32,7 @@ product_links = {
 model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
 model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
 
-# Ensure model directory exists
+# Ensure Models directory exists
 os.makedirs('Models', exist_ok=True)
 
 # Function to download model if it doesn't exist
@@ -98,11 +98,14 @@ def send_telegram_message(image_path, predicted_class, buy_link):
             parse_mode='Markdown'
         )
         
-        # Send image to Telegram
-        with open(image_path, 'rb') as image_file:
-            bot.send_photo(chat_id=chat_id, photo=image_file)
-        
-        print("Telegram message sent successfully.")
+        # Send image to Telegram if it exists
+        if os.path.exists(image_path):
+            with open(image_path, 'rb') as image_file:
+                bot.send_photo(chat_id=chat_id, photo=image_file)
+            print("Telegram message with image sent successfully.")
+        else:
+            print("Error: Image file not found for sending.")
+
     except TelegramError as e:
         print("Error sending Telegram message:", e)
 
