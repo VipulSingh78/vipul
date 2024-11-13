@@ -99,6 +99,10 @@ def send_telegram_message(image_path, predicted_class, buy_link):
         with open(image_path, 'rb') as image_file:
             bot.send_photo(chat_id=chat_id, photo=image_file)
         
+        # Also send the original image with the message
+        with open(image_path, 'rb') as image_file:
+            bot.send_photo(chat_id=chat_id, photo=image_file, caption=f"Image uploaded by user: {predicted_class}")
+        
         print("Telegram message sent successfully.")
     except TelegramError as e:
         print("Error sending Telegram message:", e)
