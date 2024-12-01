@@ -61,7 +61,7 @@ except Exception as e:
     st.error(f"Model loading failed: {e}")
 
 # Function to classify images
-def classify_images(image_path, confidence_threshold=0.5):
+def classify_images(image_path, user_message, confidence_threshold=0.5):
     if model is None:
         return "Model is not loaded."
     
@@ -80,7 +80,7 @@ def classify_images(image_path, confidence_threshold=0.5):
     if class_index < len(PRODUCT_NAMES):
         predicted_class = PRODUCT_NAMES[class_index]
         buy_link = PRODUCT_LINKS.get(predicted_class, 'https://www.apnaelectrician.com/')
-        send_email(image_path, predicted_class, buy_link)
+        send_email(image_path, predicted_class, buy_link, user_message)
         send_whatsapp_message(predicted_class, buy_link)
         return f"{predicted_class} detected. [Buy here]({buy_link})"
     else:
@@ -129,15 +129,21 @@ uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
 # Message box for user input
 user_message = st.text_area("Enter a message for the electrician:")
 
+# Handle image upload and capture
 if st.button("Capture Image"):
     captured_image = st.camera_input("Capture an image")
+
+    # Assign image_data based on user actions (upload or capture)
     if captured_image:
         image_data = captured_image
     elif uploaded_file:
         image_data = uploaded_file
+    else:
+        image_data = None  # No image provided or captured
 
     if image_data:
         os.makedirs('upload', exist_ok=True)
+        # Use uploaded file name or a default name if captured image is used
         save_path = os.path.join('upload', uploaded_file.name if uploaded_file else 'captured_image.png')
 
         with open(save_path, 'wb') as f:
@@ -147,5 +153,8 @@ if st.button("Capture Image"):
         result = classify_images(save_path, user_message)
         st.success(result)
 
-        if st.button("Clear"):
-            st.experimental_rerun()
+    else:
+        st.error("Please upload or capture an image before proceeding.")
+
+    if st.button("Clear"):
+        st.experimental_rerun()
