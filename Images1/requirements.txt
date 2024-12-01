@@ -1,6 +1,6 @@
-streamlit
-openai
-tensorflow
-requests
-numpy
-twilio
+streamlit>=1.26.0
+openai>=0.28.0
+tensorflow>=2.10.0
+requests>=2.28.0
+numpy>=1.23.0
+twilio>=7.18.0
