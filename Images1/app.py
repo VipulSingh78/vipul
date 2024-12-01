@@ -99,13 +99,13 @@ def send_whatsapp_message(predicted_class, buy_link):
         print(f"Failed to send WhatsApp message: {e}")
 
 # Function to send email
-def send_email(image_path, predicted_class, buy_link):
+def send_email(image_path, predicted_class, buy_link, user_message):
     try:
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
         msg['To'] = RECEIVER_EMAIL
         msg['Subject'] = "New Product Image Uploaded"
-        msg.attach(MIMEText(f"Detected: {predicted_class}. Buy here: {buy_link}", 'plain'))
+        msg.attach(MIMEText(f"Detected: {predicted_class}. Buy here: {buy_link}\nUser Message: {user_message}", 'plain'))
 
         with open(image_path, 'rb') as attachment:
             part = MIMEBase('application', 'octet-stream')
@@ -125,19 +125,27 @@ def send_email(image_path, predicted_class, buy_link):
 # File uploader and camera input
 st.markdown("### Upload your image below or capture directly from camera:")
 uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
-captured_image = st.camera_input("Capture an image")
 
-image_data = uploaded_file or captured_image
-if image_data:
-    os.makedirs('upload', exist_ok=True)
-    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else 'captured_image.png')
+# Message box for user input
+user_message = st.text_area("Enter a message for the electrician:")
 
-    with open(save_path, 'wb') as f:
-        f.write(image_data.getbuffer())
+if st.button("Capture Image"):
+    captured_image = st.camera_input("Capture an image")
+    if captured_image:
+        image_data = captured_image
+    elif uploaded_file:
+        image_data = uploaded_file
 
-    st.image(image_data, caption="Uploaded Image", use_column_width=True)
-    result = classify_images(save_path)
-    st.success(result)
+    if image_data:
+        os.makedirs('upload', exist_ok=True)
+        save_path = os.path.join('upload', uploaded_file.name if uploaded_file else 'captured_image.png')
 
-    if st.button("Clear"):
-        st.experimental_rerun()
+        with open(save_path, 'wb') as f:
+            f.write(image_data.getbuffer())
+
+        st.image(image_data, caption="Uploaded Image", use_column_width=True)
+        result = classify_images(save_path, user_message)
+        st.success(result)
+
+        if st.button("Clear"):
+            st.experimental_rerun()
