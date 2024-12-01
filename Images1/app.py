@@ -3,22 +3,31 @@ import numpy as np
 import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
+from twilio.rest import Client
 import requests
-from telegram import Bot, InputFile
-from telegram.error import TelegramError
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 
-bot_token = '7694193590:AAG_QI7z90BFV5p-3lBgPY3yrpR__GFuTv0'  # Replace with your actual bot token
-chat_id = '5798688974'  # Replace with your chat ID
-# Initialize the Telegram bot
-bot = Bot(token=bot_token)
+# Twilio credentials
+TWILIO_SID = 'AC093d4d6255428d338c2f3edc10328cf7'
+TWILIO_AUTH_TOKEN = '40d3d53464a816fb6de7855a640c4194'
+client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
 
-# Streamlit app title
+# Email credentials
+SENDER_EMAIL = "vipulsinghvipul7@gmail.com"  # Replace with your Gmail ID
+SENDER_PASSWORD = "zazb kspg ecjd brol"  # Replace with Gmail App Password
+RECEIVER_EMAIL = "vipulsinghvipul7@gmail.com"  # Use your email as receiver
+
+# Streamlit app setup
 st.title('Welcome to Apna Electrician')
 st.subheader('Upload or capture an image of a product, and get recommendations!')
 
-# Product names and links
-product_names = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
-product_links = {
+# Product details
+PRODUCT_NAMES = ['Anchor Switch', 'CCTV CAMERA', 'FAN', 'Switch', 'TV']
+PRODUCT_LINKS = {
     'Anchor Switch': 'https://www.apnaelectrician.com/anchor-switches',
     'CCTV CAMERA': 'https://www.apnaelectrician.com/cctv-cameras',
     'FAN': 'https://www.apnaelectrician.com/fans',
@@ -26,111 +35,109 @@ product_links = {
     'TV': 'https://www.apnaelectrician.com/tvs'
 }
 
-# Model URL and local filename
-model_url = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
-model_filename = os.path.join('Models', 'Vipul_Recog_Model.h5')
-
+# Model download setup
+MODEL_URL = 'https://github.com/VipulSingh78/vipul/raw/419d4fa1249bd95181d259c202df4e36d873f0c0/Images1/Vipul_Recog_Model.h5'
+MODEL_PATH = os.path.join('Models', 'Vipul_Recog_Model.h5')
 os.makedirs('Models', exist_ok=True)
 
-# Function to download model if it doesn't exist
+# Function to download the model
 def download_model():
-    if not os.path.exists(model_filename):
+    if not os.path.exists(MODEL_PATH):
         try:
-            with requests.get(model_url, stream=True) as r:
-                r.raise_for_status()
-                with open(model_filename, 'wb') as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
+            response = requests.get(MODEL_URL, stream=True)
+            response.raise_for_status()
+            with open(MODEL_PATH, 'wb') as f:
+                for chunk in response.iter_content(8192):
+                    f.write(chunk)
         except Exception as e:
-            st.error(f"Error downloading the model: {e}")
+            st.error(f"Failed to download the model: {e}")
 
-# Download the model
+# Download and load the model
 download_model()
-
-# Load the model
+model = None
 try:
-    model = load_model(model_filename)
+    model = load_model(MODEL_PATH)
 except Exception as e:
-    st.error(f"Error loading model: {e}")
-    model = None
+    st.error(f"Model loading failed: {e}")
 
-# Image classification function with confidence threshold
+# Function to classify images
 def classify_images(image_path, confidence_threshold=0.5):
     if model is None:
-        return "Model is not loaded properly."
-
-    input_image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
-    input_image_array = tf.keras.utils.img_to_array(input_image)
-    input_image_exp_dim = tf.expand_dims(input_image_array, 0)
-
-    predictions = model.predict(input_image_exp_dim)
-    result = tf.nn.softmax(predictions[0])
-    predicted_class_index = np.argmax(result)
-    predicted_confidence = result[predicted_class_index]
+        return "Model is not loaded."
     
-    # Check confidence level
-    if predicted_confidence < confidence_threshold:
-        return "Error: The image doesn't match any known product with high confidence."
+    image = tf.keras.utils.load_img(image_path, target_size=(224, 224))
+    image_array = tf.keras.utils.img_to_array(image)
+    image_array = np.expand_dims(image_array, axis=0)
 
-    if 0 <= predicted_class_index < len(product_names):
-        predicted_class = product_names[predicted_class_index]
+    predictions = model.predict(image_array)
+    confidence_scores = tf.nn.softmax(predictions[0])
+    class_index = np.argmax(confidence_scores)
+    confidence = confidence_scores[class_index]
+    
+    if confidence < confidence_threshold:
+        return "Error: Low confidence. The image doesn't match any known product."
+    
+    if class_index < len(PRODUCT_NAMES):
+        predicted_class = PRODUCT_NAMES[class_index]
+        buy_link = PRODUCT_LINKS.get(predicted_class, 'https://www.apnaelectrician.com/')
+        send_email(image_path, predicted_class, buy_link)
+        send_whatsapp_message(predicted_class, buy_link)
+        return f"{predicted_class} detected. [Buy here]({buy_link})"
     else:
-        return "Error: Predicted class index out of range."
+        return "Error: Predicted class out of range."
 
-    buy_link = product_links.get(predicted_class, 'https://www.apnaelectrician.com/')
-    
-    # Send the image and classification to Telegram
-    send_telegram_message(image_path, predicted_class, buy_link)
-    
-    return f'The image belongs to {predicted_class}. [Buy here]({buy_link})'
-
-# Function to send Telegram message with classification and image
-def send_telegram_message(image_path, predicted_class, buy_link):
+# Function to send WhatsApp messages
+def send_whatsapp_message(predicted_class, buy_link):
     try:
-        # Send classification result and buy link to Telegram
-        bot.send_message(
-            chat_id=chat_id,
-            text=f"Classification Result: {predicted_class}. Buy here: {buy_link}",
-            parse_mode='Markdown'
+        client.messages.create(
+            from_='whatsapp:+14155238886',
+            to='whatsapp:+917800905998',
+            body=f"Product detected: {predicted_class}. Buy it here: {buy_link}"
         )
-        
-        # Send image to Telegram
-        with open(image_path, 'rb') as image_file:
-            bot.send_photo(chat_id=chat_id, photo=image_file)
-        
-        # Also send the original image with the message
-        with open(image_path, 'rb') as image_file:
-            bot.send_photo(chat_id=chat_id, photo=image_file, caption=f"Image uploaded by user: {predicted_class}")
-        
-        print("Telegram message sent successfully.")
-    except TelegramError as e:
-        print("Error sending Telegram message:", e)
-
-# Streamlit camera input and file uploader
-st.markdown("### Upload your image below or capture directly from camera:")
-uploaded_file = st.file_uploader('Choose an Image', type=['jpg', 'jpeg', 'png'])
-captured_image = st.camera_input("Capture Image")
-
-# Choose the captured image or uploaded file if available
-image_data = uploaded_file if uploaded_file else captured_image
-
-if image_data is not None:
-    # Save and display image
-    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else "captured_image.png")
-    os.makedirs('upload', exist_ok=True)
-    with open(save_path, 'wb') as f:
-        f.write(image_data.getbuffer() if uploaded_file else captured_image.getvalue())
-
-    st.image(image_data, use_column_width=True)
-
-    try:
-        # Run the classify_images function
-        result = classify_images(save_path)
-        st.success(result)
+        print("WhatsApp message sent successfully!")
     except Exception as e:
-        st.error(f"Error in classification: {e}")
+        print(f"Failed to send WhatsApp message: {e}")
 
-    if st.button("Clear Image"):
-        uploaded_file = None
+# Function to send email
+def send_email(image_path, predicted_class, buy_link):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = RECEIVER_EMAIL
+        msg['Subject'] = "New Product Image Uploaded"
+        msg.attach(MIMEText(f"Detected: {predicted_class}. Buy here: {buy_link}", 'plain'))
+
+        with open(image_path, 'rb') as attachment:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename={os.path.basename(image_path)}')
+            msg.attach(part)
+
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+# File uploader and camera input
+st.markdown("### Upload your image below or capture directly from camera:")
+uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
+captured_image = st.camera_input("Capture an image")
+
+image_data = uploaded_file or captured_image
+if image_data:
+    os.makedirs('upload', exist_ok=True)
+    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else 'captured_image.png')
+
+    with open(save_path, 'wb') as f:
+        f.write(image_data.getbuffer())
+
+    st.image(image_data, caption="Uploaded Image", use_column_width=True)
+    result = classify_images(save_path)
+    st.success(result)
+
+    if st.button("Clear"):
         st.experimental_rerun()
