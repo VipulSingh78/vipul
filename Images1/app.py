@@ -124,37 +124,39 @@ def send_email(image_path, predicted_class, buy_link, user_message):
 
 # File uploader and camera input
 st.markdown("### Upload your image below or capture directly from camera:")
-uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
 
 # Message box for user input
 user_message = st.text_area("Enter a message for the electrician:")
 
 # Handle image upload and capture
+captured_image = None
+uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
+
 if st.button("Capture Image"):
     captured_image = st.camera_input("Capture an image")
 
-    # Assign image_data based on user actions (upload or capture)
-    if captured_image:
-        image_data = captured_image
-    elif uploaded_file:
-        image_data = uploaded_file
-    else:
-        image_data = None  # No image provided or captured
+# Check if image is uploaded or captured
+image_data = None
+if uploaded_file:
+    image_data = uploaded_file
+elif captured_image:
+    image_data = captured_image
 
-    if image_data:
-        os.makedirs('upload', exist_ok=True)
-        # Use uploaded file name or a default name if captured image is used
-        save_path = os.path.join('upload', uploaded_file.name if uploaded_file else 'captured_image.png')
+# Only proceed if an image is uploaded or captured
+if image_data:
+    os.makedirs('upload', exist_ok=True)
+    # Use uploaded file name or a default name if captured image is used
+    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else 'captured_image.png')
 
-        with open(save_path, 'wb') as f:
-            f.write(image_data.getbuffer())
+    with open(save_path, 'wb') as f:
+        f.write(image_data.getbuffer())
 
-        st.image(image_data, caption="Uploaded Image", use_column_width=True)
-        result = classify_images(save_path, user_message)
-        st.success(result)
+    st.image(image_data, caption="Uploaded Image", use_column_width=True)
+    result = classify_images(save_path, user_message)
+    st.success(result)
 
-    else:
-        st.error("Please upload or capture an image before proceeding.")
+else:
+    st.warning("Please upload or capture an image before proceeding.")
 
-    if st.button("Clear"):
-        st.experimental_rerun()
+if st.button("Clear"):
+    st.experimental_rerun()
