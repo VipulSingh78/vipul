@@ -123,28 +123,35 @@ def send_email(image_path, predicted_class, buy_link, user_message):
         print(f"Failed to send email: {e}")
 
 # File uploader and camera input
-st.markdown("### Upload your image and add a message below:")
+st.markdown("### Upload your image or capture one directly below:")
 
 # Message box for user input
 user_message = st.text_area("Enter a message for the electrician:")
+
+# Handle camera input
+captured_image = st.camera_input("Capture an image")
 
 # Handle image upload
 uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
 
 # Consolidate logic under a single button
 if st.button("Upload and Send"):
-    if uploaded_file and user_message:
+    if (uploaded_file or captured_image) and user_message:
         os.makedirs('upload', exist_ok=True)
-        save_path = os.path.join('upload', uploaded_file.name)
+        save_path = os.path.join('upload', (uploaded_file.name if uploaded_file else 'captured_image.jpg'))
 
-        with open(save_path, 'wb') as f:
-            f.write(uploaded_file.getbuffer())
+        if uploaded_file:
+            with open(save_path, 'wb') as f:
+                f.write(uploaded_file.getbuffer())
+        else:
+            with open(save_path, 'wb') as f:
+                f.write(captured_image.getbuffer())
 
-        st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+        st.image(save_path, caption="Selected Image", use_container_width=True)
         result = classify_images(save_path, user_message)
         st.success(result)
     else:
-        st.warning("Please upload an image and enter a message before proceeding.")
+        st.warning("Please upload or capture an image and enter a message before proceeding.")
 
 if st.button("Clear"):
     st.experimental_rerun()
