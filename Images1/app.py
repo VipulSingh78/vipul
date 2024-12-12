@@ -123,40 +123,28 @@ def send_email(image_path, predicted_class, buy_link, user_message):
         print(f"Failed to send email: {e}")
 
 # File uploader and camera input
-st.markdown("### Upload your image below or capture directly from camera:")
+st.markdown("### Upload your image and add a message below:")
 
 # Message box for user input
 user_message = st.text_area("Enter a message for the electrician:")
 
-# Handle image upload and capture
-captured_image = None
+# Handle image upload
 uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
 
-if st.button("Capture Image"):
-    captured_image = st.camera_input("Capture an image")
+# Consolidate logic under a single button
+if st.button("Upload and Send"):
+    if uploaded_file and user_message:
+        os.makedirs('upload', exist_ok=True)
+        save_path = os.path.join('upload', uploaded_file.name)
 
-# Check if image is uploaded or captured
-image_data = None
-if uploaded_file:
-    image_data = uploaded_file
-elif captured_image:
-    image_data = captured_image
+        with open(save_path, 'wb') as f:
+            f.write(uploaded_file.getbuffer())
 
-# Only proceed if an image is uploaded or captured
-if image_data:
-    os.makedirs('upload', exist_ok=True)
-    # Use uploaded file name or a default name if captured image is used
-    save_path = os.path.join('upload', uploaded_file.name if uploaded_file else 'captured_image.png')
-
-    with open(save_path, 'wb') as f:
-        f.write(image_data.getbuffer())
-
-    st.image(image_data, caption="Uploaded Image", use_column_width=True)
-    result = classify_images(save_path, user_message)
-    st.success(result)
-
-else:
-    st.warning("Please upload or capture an image before proceeding.")
+        st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+        result = classify_images(save_path, user_message)
+        st.success(result)
+    else:
+        st.warning("Please upload an image and enter a message before proceeding.")
 
 if st.button("Clear"):
     st.experimental_rerun()
